@@ -16,7 +16,9 @@
  */
 
 package bitNom;
-
+// TODO:
+// Make this run on a thread, and make it able to serve any arbitrary
+// segment of a file, not just the first one.
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
