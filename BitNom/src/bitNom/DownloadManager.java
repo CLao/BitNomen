@@ -6,6 +6,8 @@ package bitNom;
 // creates a thread (Downloader) for each segment of the file, and attempts
 // to either run them all, or a subset of them all to download the file.
 
+// The idea is to hash the file, and ask other peers if they have a file with that hash.
+
 public class DownloadManager {
 
 }

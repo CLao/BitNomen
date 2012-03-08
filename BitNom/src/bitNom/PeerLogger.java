@@ -16,6 +16,10 @@ package bitNom;
 // The PeerLogger class should manage these lists, as well as provide
 // methods to call in order to add or remove peers from the lists.
 
+// It should also provide a method to give a new node (which needs to
+// bootstrap) its own list of peers, and forward to those peers that
+// a new node joined.
+
 public class PeerLogger {
 
 }

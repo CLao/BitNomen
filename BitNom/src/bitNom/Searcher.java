@@ -11,6 +11,8 @@ package bitNom;
 // dunno yet, forward the query to other peers and forward their results back to
 // the original requestor.
 
+// Also takes care of finding a file with a specific hash.
+
 public class Searcher{
 
 }
