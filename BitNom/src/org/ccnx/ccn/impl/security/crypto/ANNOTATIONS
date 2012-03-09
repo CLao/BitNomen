@@ -1,4 +1,0 @@
-/**
- * @package org.ccnx.ccn.impl.security.crypto
- * Core implementation of signing and encryption for the CCNx Java library.
- */
