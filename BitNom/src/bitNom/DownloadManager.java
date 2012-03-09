@@ -8,6 +8,6 @@ package bitNom;
 
 // The idea is to hash the file, and ask other peers if they have a file with that hash.
 
-public class DownloadManager {
-
+public class DownloadManager implements Runnable {
+	public void run(){}
 }

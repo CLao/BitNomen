@@ -13,6 +13,6 @@ package bitNom;
 
 // Also takes care of finding a file with a specific hash.
 
-public class Searcher{
-
+public class Searcher implements Runnable{
+	public void run(){}
 }

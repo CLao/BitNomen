@@ -11,6 +11,6 @@ package bitNom;
 // The content requests are queued here and serviced in a manner roughly
 // following the tit-for-tat plan.
 
-public class RequestHandler{
-
+public class RequestHandler implements Runnable{
+	public void run(){}
 }

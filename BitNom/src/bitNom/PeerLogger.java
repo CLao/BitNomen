@@ -20,6 +20,6 @@ package bitNom;
 // bootstrap) its own list of peers, and forward to those peers that
 // a new node joined.
 
-public class PeerLogger {
-
+public class PeerLogger implements Runnable {
+	public void run(){}
 }
