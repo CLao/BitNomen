@@ -1,13 +1,7 @@
 package bitNom;
 
 import java.util.*;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.FileReader;
-import java.io.BufferedWriter;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 
 //TODO
 // Instead of keeping a persistent connection to other nodes,
@@ -35,12 +29,46 @@ import java.io.PrintWriter;
 // entered and removed from the table when necessary.
 
 public class PeerLogger implements Runnable {
-	ArrayList<String> recentPeers = new ArrayList<String>();
-	ArrayList<String> allEncountered = new ArrayList<String>();
+	List<String> recentPeers = Collections.synchronizedList(new ArrayList<String>());
+	List<String> allEncountered = Collections.synchronizedList(new ArrayList<String>());
 	File fRecentPeers = new File("PeerList.txt");
 	File fAllEncountered = new File("AllEncountered.txt");
 	
 	public void run(){}
+	
+	List<String> returnRecent(){
+		return recentPeers;
+	}
+	
+	List<String> returnAll(){
+		return allEncountered;
+	}
+	
+	public void appendRecentToAll(){
+		//Append to ArrayList
+		allEncountered.addAll(recentPeers);
+		
+		//Append to file
+		try{
+			  InputStream in = new FileInputStream(fRecentPeers);
+			  OutputStream out = new FileOutputStream(fAllEncountered,true);
+
+			  byte[] buf = new byte[1024];
+			  int len;
+			  while ((len = in.read(buf)) > 0){
+				  out.write(buf, 0, len);
+			  }
+			  in.close();
+			  out.close();
+		}
+		catch(FileNotFoundException ex){
+			  System.out.println(ex.getMessage() + " in the specified directory.");
+			  System.exit(0);
+		}
+		catch(IOException e){
+			  System.out.println(e.getMessage());  
+		}
+	}
 	
 	public void addPeertoList(String name, ArrayList<String> list, File file, String filename) {
 		
