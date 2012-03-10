@@ -12,7 +12,8 @@ import org.ccnx.ccn.io.CCNFileInputStream;
 
 public class SegDownloader implements Runnable {
 
-	SegDownloader(String ccnPath){
+	SegDownloader(Download par, String ccnPath){
+		parent = par;
 		dlPath = ccnPath;
 		status = Dstatus.NONE;
 	}
@@ -20,28 +21,42 @@ public class SegDownloader implements Runnable {
 	public void run(){
 		
 		while (status != Dstatus.FINISHED) {
-			synchronized (this){
-				download();
 			
+				download();
+				synchronized (parent) {		
 				// If the download failed, wait for the Download to give us a new path.
 				if (status == Dstatus.FAILED)
 				{ 
-					try {
-						wait();
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						//e.printStackTrace();
-					} 
+					parent.addFailed(this);
+					parent.notify();
 				}
+				
+				if (status == Dstatus.FINISHED)
+				{
+					parent.finishSegment(this);
+					parent.notify();
+				}
+				
+				synchronized (this){
+					if (status == Dstatus.FAILED)
+						try {
+							wait();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							//e.printStackTrace();
+						}
+				}	
 			}
 		}
 		
 	}
 	
 	// Try to download from the current peer.
-	public void download(){}
+	public void download(){
+		
+	}
 	
 	String dlPath;
 	Dstatus status;
-
+	Download parent;
 }
