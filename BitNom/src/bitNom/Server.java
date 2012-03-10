@@ -5,6 +5,11 @@ import org.ccnx.ccn.impl.support.Log;
 
 public class Server implements Runnable {
 	String args[];
+	
+	Server(String[] pargs){
+		args = pargs;
+	}
+	
 	public void run(){
 		if (args.length < 1) {
 			CCNFileProxy.usage();
