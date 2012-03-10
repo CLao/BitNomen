@@ -9,19 +9,23 @@ public class BitNom {
 		server = new Server(args);
 		(new Thread(server)).start();
 		
-		downloadMgr = new DownloadManager();
-		(new Thread (downloadMgr)).start();
-		
 		peerLgr = new PeerLogger();
 		(new Thread (peerLgr)).start();
 		
-		Searcher searcher = new Searcher();
+		downloadMgr = new DownloadManager(peerLgr);
+		(new Thread (downloadMgr)).start();
+		
+		Searcher searcher = new Searcher(peerLgr);
 		(new Thread (searcher)).start();
 		
 		rqstHndlr = new RequestHandler(server, downloadMgr, peerLgr, searcher);	
-		rqstHndlr.start();
-
+		(new Thread (rqstHndlr)).start();
+		
+		startBitNom();
+		
 	}
+	
+	public static void startBitNom(){}
 	
 	public static Server server;
 	public static DownloadManager downloadMgr;

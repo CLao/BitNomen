@@ -15,4 +15,10 @@ package bitNom;
 
 public class Searcher implements Runnable{
 	public void run(){}
+	
+	Searcher(PeerLogger pl){
+		peerLgr = pl;
+	}
+	
+	PeerLogger peerLgr;
 }

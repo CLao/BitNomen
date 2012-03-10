@@ -10,7 +10,7 @@ package bitNom;
 // The content requests are queued here and serviced in a manner roughly
 // following the tit-for-tat plan.
 
-public class RequestHandler{
+public class RequestHandler implements Runnable{
 	RequestHandler(Server sv, DownloadManager dm, PeerLogger pl, Searcher sc){
 		server = sv;
 		downloadMgr = dm;
@@ -18,7 +18,7 @@ public class RequestHandler{
 		searcher = sc;
 	}
 	
-	void start(){}
+	public void run(){}
 	
 	Server server;
 	DownloadManager downloadMgr;
