@@ -69,46 +69,36 @@ public class PeerLogger implements Runnable {
 			  System.out.println(e.getMessage());  
 		}
 	}
-	
-	public void addPeertoList(String name, ArrayList<String> list, File file, String filename) {
+	//Add to ArrayList
+	public void addPeertoList(String name, ArrayList<String> list) {
 		
-		//Add to ArrayList
 		list.add(name);
+	}
+	
+	//Add to .txt file
+	public void addPeertoFile(String name, File file){
 		
-		//Add to .txt file
 		try{
-			//if file doesnt exists, then create it
-    		if(!file.exists()){
-    			file.createNewFile();
-    		}
- 
-    		//true = append file
-    		FileWriter fileWritter = new FileWriter(file.getName(),true);
-    	    BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
-    	    bufferWritter.write(name);
-    	    bufferWritter.close();
- 
-	        System.out.println("Done");
- 
+    		FileWriter fw = new FileWriter(file.getName(),true);
+    	    BufferedWriter bw = new BufferedWriter(fw);
+    	    bw.write(name);
+    	    bw.close();
     	}
 		catch(IOException e){
     		e.printStackTrace();
     	}
 	}
-	
-	
-	public void removePeer(String name, ArrayList<String> list, File file){
 		
-		//Remove from ArrayList
+	//Remove from ArrayList
+	public void removePeerList(String name, ArrayList<String> list){
+			
 		list.remove(name);
+	}
+	
+	//Remove from .txt file
+	public void removePeerFile(String name, File file){
 		
-		//Remove from .txt file
 		try {
-			if (!file.isFile()) {
-				System.out.println("Parameter is not an existing file");
-			    return;
-			}
-
 			//Construct the new file that will later be renamed to the original filename.
 			File tempFile = new File(file.getAbsolutePath() + ".tmp");
 			BufferedReader br = new BufferedReader(new FileReader(file));
@@ -135,8 +125,23 @@ public class PeerLogger implements Runnable {
 			if (!tempFile.renameTo(file))
 			    System.out.println("Could not rename file");
 			}
-			catch (IOException ex) {
-			  ex.printStackTrace();
+			catch (IOException e) {
+			  e.printStackTrace();
 			}
+	}
+	
+	public void updateFile(List<String> list, File file){
+		try{
+    		FileWriter fw = new FileWriter(file.getName());
+    	    BufferedWriter bw = new BufferedWriter(fw);
+    	    for (int i = 0; i < list.size(); i++){
+    	    	bw.write(list.get(i));
+    	    	bw.write("\r\n");
+    	    }
+    	    bw.close();
+    	}
+		catch(IOException e){
+    		e.printStackTrace();
+		}
 	}
 }
