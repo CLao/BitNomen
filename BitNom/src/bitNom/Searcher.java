@@ -1,8 +1,13 @@
 package bitNom;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Vector;
@@ -98,6 +103,32 @@ public class Searcher implements Runnable{
 			// Concatenate .searchhelper with .results
 		}
 		// Output to screen the file list.
+		FileInputStream fstream;
+		try {
+			fstream = new FileInputStream(root.getPath() + "/.results");
+			DataInputStream in = new DataInputStream(fstream);
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			String strLine;
+			
+			try {
+				while((strLine = br.readLine()) != null)
+				{
+					System.out.println(strLine);
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		// Optionally, we could check to see if there is only one result and
 		// download that automatically.
