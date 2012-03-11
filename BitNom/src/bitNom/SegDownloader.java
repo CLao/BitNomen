@@ -12,10 +12,11 @@ import org.ccnx.ccn.io.CCNFileInputStream;
 
 public class SegDownloader implements Runnable {
 
-	SegDownloader(Download par, String ccnPath){
+	SegDownloader(Download par, String ccnPath, int segNum){
 		parent = par;
 		dlPath = ccnPath;
 		status = Dstatus.NONE;
+		seg = segNum;
 	}
 	
 	public void run(){
@@ -27,14 +28,12 @@ public class SegDownloader implements Runnable {
 				// If the download failed, wait for the Download to give us a new path.
 				if (status == Dstatus.FAILED)
 				{ 
-					parent.addFailed(this);
-					parent.notify();
+					parent.addStopped(this);
 				}
 				
 				if (status == Dstatus.FINISHED)
 				{
 					parent.finishSegment(this);
-					parent.notify();
 				}
 				
 				synchronized (this){
@@ -59,4 +58,5 @@ public class SegDownloader implements Runnable {
 	String dlPath;
 	Dstatus status;
 	Download parent;
+	int seg;
 }
