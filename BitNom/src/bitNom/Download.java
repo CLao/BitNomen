@@ -1,6 +1,7 @@
 package bitNom;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 public class Download implements Runnable {
 	Download (String dpath, List<String> recentPeers, int segments){
@@ -14,88 +15,60 @@ public class Download implements Runnable {
 	public void run() {
 		// Create a segment downloader for each segment and run them simultaneously
 		for (int i = 0; i < nSeg; i++) {
-			segDownloads.add(new SegDownloader(this, peers.get(i % peers.size()) + path));
+			segDownloads.add(new SegDownloader(this, peers.get(i % peers.size()) + path, i));
 			(new Thread(segDownloads.get(segDownloads.size() - 1))).start();
 		}
 		
 		// Wait for a download thread to either finish or fail, and update our bookkeeping
-
-		while (!done) {
-			synchronized (this) {
-				try {
-					wait();
-					
-					if (failed.isEmpty() && doneSegs == nSeg)
-					{ 
-						done = true;
-					}
-					
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
-				}
-			}
 			
-			while (!failed.isEmpty())
+		try {
+			while (!done)
 			{
 				// Give a new path to every download thread that failed
-				SegDownloader s = failed.get(0);
-				s.dlPath = getNewPath();
-				removeFailed(s);
-				synchronized(s) { s.notify(); }
-			}
-		}
-		
-		// If any fail, reverify if that peer exists, and then give the thread a new path
-		/*while (!done) {
-			
-			int tempDone = 0;
-			for (int i = 0; i < nSeg; i++) {
-				SegDownloader cur = segDownloads.get(i);
-				synchronized(cur){
-					if (cur.status == Dstatus.FINISHED)
-						{ tempDone++; }
-					if (cur.status == Dstatus.FAILED)
-					{
-						cur.dlPath = getNewPath();
-						notify();
+				SegDownloader s = bstopped.take();
+				if (s.status == Dstatus.FAILED)
+					synchronized(s) {
+						s.dlPath = getNewPath();
+						removeStopped(s);
+						s.notify(); 
 					}
+				else if (s.status == Dstatus.FINISHED)
+				{
+					if (nSeg == doneSegs)
+						done = true;
 				}
+				else throw new RuntimeException("Impossible");
+				
 			}
-			
-			doneSegs = tempDone;
-			if (doneSegs == nSeg)
-				done = true;
-			else try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}*/
+		} catch (InterruptedException e){}
+		finally{}
+		
+		
 	}
 	
-	String getNewPath(){
+	synchronized String getNewPath(){
 		String peer = peers.get(0);
 		return peer + path;
 	}
 	
-	void addFailed(SegDownloader s){
-		failed.add(s);
+	synchronized void addStopped(SegDownloader s){
+		//stopped.add(s);
+		bstopped.add(s);
 	}
 	
-	void removeFailed(SegDownloader s){
-		failed.remove(s);
+	synchronized void removeStopped(SegDownloader s){
+		//stopped.remove(s);
+		bstopped.remove(s);
 	}
 	
-	void finishSegment(SegDownloader s){
-		int index = segDownloads.indexOf(s);
-		if (index < 0) 
-			throw new RuntimeException( "Tried to finish nonexistent segment." );
-		
-		segFin[index] = true;
-		doneSegs++;
-		segDownloads.remove(index);
+	synchronized void finishSegment(SegDownloader s){
+			int index = segDownloads.indexOf(s);
+			if (index < 0) 
+				throw new RuntimeException( "Tried to finish nonexistent segment." );
+			
+			segFin[index] = true;
+			doneSegs++;
+			segDownloads.remove(index);
 	}
 	
 	String path;
@@ -103,7 +76,8 @@ public class Download implements Runnable {
 	int doneSegs;
 	List<String> peers;
 	List<SegDownloader> segDownloads;
-	List<SegDownloader> failed;
+	//List<SegDownloader> stopped;
+	ArrayBlockingQueue<SegDownloader> bstopped;
 	boolean segFin[];
 	boolean done;
 }
