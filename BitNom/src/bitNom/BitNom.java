@@ -1,30 +1,36 @@
 package bitNom;
 
-import bitNom.Server;
-
 public class BitNom {
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		Server server = new Server();
-		server.args = args;
+		server = new Server(args);
 		(new Thread(server)).start();
 		
-		DownloadManager downloadMgr = new DownloadManager();
+		peerLgr = new PeerLogger();
+		(new Thread (peerLgr)).start();
+		
+		downloadMgr = new DownloadManager(peerLgr);
 		(new Thread (downloadMgr)).start();
 		
-		PeerLogger PeerLgr = new PeerLogger();
-		(new Thread (PeerLgr)).start();
-		
-		Searcher searcher = new Searcher();
+		Searcher searcher = new Searcher(peerLgr);
 		(new Thread (searcher)).start();
 		
-		RequestHandler RqstHndlr = new RequestHandler();
-		(new Thread (RqstHndlr)).start();
+		rqstHndlr = new RequestHandler(server, downloadMgr, peerLgr, searcher);	
+		(new Thread (rqstHndlr)).start();
+		
+		startBitNom();
 		
 	}
 	
+	public static void startBitNom(){}
+	
+	public static Server server;
+	public static DownloadManager downloadMgr;
+	public static PeerLogger peerLgr;
+	public static Searcher searcher;
+	public static RequestHandler rqstHndlr;
 
 }
