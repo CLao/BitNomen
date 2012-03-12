@@ -23,16 +23,18 @@ import java.io.*;
 // bootstrap) its own list of peers, and forward to those peers that
 // a new node joined.
 
-// It should also maintain a table of downloading files. It will keep 
-// track of files not completed downloading and the segments of the files 
-// that have completed downloading. This class will allow data to be 
-// entered and removed from the table when necessary.
-
 public class PeerLogger implements Runnable {
-	List<String> recentPeers = Collections.synchronizedList(new ArrayList<String>());
-	List<String> allEncountered = Collections.synchronizedList(new ArrayList<String>());
-	File fRecentPeers = new File("PeerList.txt");
-	File fAllEncountered = new File("AllEncountered.txt");
+	public List<String> recentPeers;
+	public List<String> allEncountered;
+	public File fRecentPeers;
+	public File fAllEncountered;
+	
+	public PeerLogger(){
+		recentPeers = Collections.synchronizedList(new ArrayList<String>());
+		allEncountered = Collections.synchronizedList(new ArrayList<String>());
+		fRecentPeers = new File("PeerList.txt");
+		fAllEncountered = new File("AllEncountered.txt");
+	}
 	
 	public void run(){}
 	
@@ -44,90 +46,21 @@ public class PeerLogger implements Runnable {
 		return allEncountered;
 	}
 	
-	public void appendRecentToAll(){
+	public synchronized void appendRecentToAllList(){
 		//Append to ArrayList
 		allEncountered.addAll(recentPeers);
-		
-		//Append to file
-		try{
-			  InputStream in = new FileInputStream(fRecentPeers);
-			  OutputStream out = new FileOutputStream(fAllEncountered,true);
-
-			  byte[] buf = new byte[1024];
-			  int len;
-			  while ((len = in.read(buf)) > 0){
-				  out.write(buf, 0, len);
-			  }
-			  in.close();
-			  out.close();
-		}
-		catch(FileNotFoundException ex){
-			  System.out.println(ex.getMessage() + " in the specified directory.");
-			  System.exit(0);
-		}
-		catch(IOException e){
-			  System.out.println(e.getMessage());  
-		}
 	}
+	
 	//Add to ArrayList
-	public void addPeertoList(String name, ArrayList<String> list) {
+	public synchronized void addPeertoList(String name, ArrayList<String> list) {
 		
 		list.add(name);
 	}
-	
-	//Add to .txt file
-	public void addPeertoFile(String name, File file){
-		
-		try{
-    		FileWriter fw = new FileWriter(file.getName(),true);
-    	    BufferedWriter bw = new BufferedWriter(fw);
-    	    bw.write(name);
-    	    bw.close();
-    	}
-		catch(IOException e){
-    		e.printStackTrace();
-    	}
-	}
 		
 	//Remove from ArrayList
-	public void removePeerList(String name, ArrayList<String> list){
+	public synchronized void removePeerList(String name, ArrayList<String> list){
 			
 		list.remove(name);
-	}
-	
-	//Remove from .txt file
-	public void removePeerFile(String name, File file){
-		
-		try {
-			//Construct the new file that will later be renamed to the original filename.
-			File tempFile = new File(file.getAbsolutePath() + ".tmp");
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-			String line = null;
-
-			//Read from the original file and write to the new
-			//unless content matches data to be removed.
-			while ((line = br.readLine()) != null) {
-				if (!line.trim().equals(name)) {
-			    pw.println(line);
-			    pw.flush();
-			    }
-			}
-			pw.close();
-			br.close();
-
-			//Delete the original file
-			if (!file.delete()) {
-			    System.out.println("Could not delete file");
-			    return;
-			}
-			//Rename the new file to the filename the original file had.
-			if (!tempFile.renameTo(file))
-			    System.out.println("Could not rename file");
-			}
-			catch (IOException e) {
-			  e.printStackTrace();
-			}
 	}
 	
 	public void updateFile(List<String> list, File file){
