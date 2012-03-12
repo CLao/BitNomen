@@ -24,10 +24,17 @@ import java.io.*;
 // a new node joined.
 
 public class PeerLogger implements Runnable {
-	public List<String> recentPeers = Collections.synchronizedList(new ArrayList<String>());
-	public List<String> allEncountered = Collections.synchronizedList(new ArrayList<String>());
-	public File fRecentPeers = new File("PeerList.txt");
-	public File fAllEncountered = new File("AllEncountered.txt");
+	public List<String> recentPeers;
+	public List<String> allEncountered;
+	public File fRecentPeers;
+	public File fAllEncountered;
+	
+	public PeerLogger(){
+		recentPeers = Collections.synchronizedList(new ArrayList<String>());
+		allEncountered = Collections.synchronizedList(new ArrayList<String>());
+		fRecentPeers = new File("PeerList.txt");
+		fAllEncountered = new File("AllEncountered.txt");
+	}
 	
 	public void run(){}
 	

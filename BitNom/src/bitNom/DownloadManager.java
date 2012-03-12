@@ -32,7 +32,7 @@ public class DownloadManager implements Runnable {
 	}
 	
 	// Starts to download
-	public void initDownload(String prefix, String path, int segments){
+	public synchronized void initDownload(String prefix, String path, int segments){
 		// Start a thread for each segment of the file.
 
 			downloads.add(new Download(path, peerLgr.recentPeers, segments));
