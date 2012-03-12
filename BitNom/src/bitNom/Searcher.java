@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,6 +17,14 @@ import java.lang.String;
  * directory (namespace). In keeping like with like, I'm comfortable with keeping searchDirectory() here.
  * However, in order for searches to be performed by other peers, .search should be created at the earliest
  * possible moment - the Searcher class must be initialized as early as possible.
+ * 
+ * Currently, truncateToQuery() looks for files names with an exact postfix match. For example, if I perform
+ * a search for a file named "foo" and had the files:
+ * 	folder/foo
+ * 	folder/foo.txt
+ * 	
+ * Only folder/foo would return as a result. The reverse is also true. I'm considering implementing an option 
+ * to ignore extensions...
  * 
  * An actual search is performed with the searchThroughPeers() function. It is a public function that can
  * be called whenever. It requires a list of peers. It functions by downloading each peer's .search file,
@@ -30,7 +39,7 @@ public class Searcher implements Runnable{
 	{
 		super();
 		root = new File(home);
-		searchDirectory(root);
+		//searchDirectory(root);
 	}
 	
 	/* searchDirectory() searches recursively through a given directory (root).
@@ -39,51 +48,57 @@ public class Searcher implements Runnable{
 	private void searchDirectory(File root)
 	{
 		File[] entries = root.listFiles();
+		File searchFile = new File(root.getAbsolutePath() + "/.search");
+		
+		// Delete the .search file, if one already exists.
+		if(searchFile.exists())
+		{
+			searchFile.delete();
+		}
 		if(entries != null)
 		{
 			for(File entry : entries)
 			{
-				//String filename = entry.getPath();
-				//boolean match = filename.substring(filename.lastIndexOf("/") + 1).compareTo(pattern) == 0;
 				if(entry.isDirectory())
 				{
 					searchDirectory(entry);
 				}
 				else if(entry.isFile())
 				{
-					writeToSearch(entry);
+					String relative =  root.toURI().relativize(entry.toURI()).getPath();
+					String pathname = root + "/" + relative;
+					appendToFile(root.getAbsolutePath() + "/.search", pathname);
 				}				
 			}
 		}
 	}
 	
-	/* writeToSearch() is a helper function for searchDirectory().
-	 * It handles the actual creation and writing to .search.
+	/* appendToFile() is a helper function for searchDirectory() and truncateToQuery.
+	 * It takes in a filename to write to and a string to append. It handles the 
+	 * actual creation of and writing to files.
 	 */
-	private void writeToSearch(File file)
+	private void appendToFile(String file, String string)
 	{
-		File searchFile = new File(root.getAbsolutePath() + "/.search");
-		// Create the search file, if one does not already exist.
-		if(!searchFile.exists())
+		File toAppend = new File(file);
+		// Create the file, if one does not already exist.
+		if(!toAppend.exists())
 		{
 			try {
-				searchFile.createNewFile();
+				toAppend.createNewFile();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		
-		// Append filename to .search
+		// Append filename to file
 		try {
-			FileWriter fstream = new FileWriter(searchFile.getAbsolutePath(), true); // true -> append
+			FileWriter fstream = new FileWriter(toAppend.getAbsolutePath(), true); // true -> append
 			BufferedWriter out = new BufferedWriter(fstream);
-			
-			String relative =  root.toURI().relativize(file.toURI()).getPath();
-			String pathname = root + "/" + relative;
+						
 			try {
-				System.out.println("Writing to: " + searchFile.getAbsolutePath());
-				out.write(pathname);
+				System.out.println("Writing to: " + string);
+				out.write(string);
 				out.newLine();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -110,18 +125,15 @@ public class Searcher implements Runnable{
 	{
 		File resultsFile = new File(root.getAbsolutePath() + "/.results");
 		File searchHelper = new File(root.getAbsolutePath() + "/.searchhelper");
-		// Create the .results file, if one does not already exist.
-		if(!resultsFile.exists())
+		
+		// Delete the .results file, if one already exist.
+		if(resultsFile.exists())
 		{
-			try {
-				resultsFile.createNewFile();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			resultsFile.delete();
 		}
 		
 		// Create the .searchhelper file
+		/* This is created by the download function?
 		if(!searchHelper.exists())
 		{
 			try {
@@ -131,16 +143,18 @@ public class Searcher implements Runnable{
 				e.printStackTrace();
 			}
 		}
+		*/
 		for(String peer : peers)
 		{
 			// Download .search from peer. Name the file .searchhelper
 			// We will download each .search file sequentially.
-			// Concatenate .searchhelper with .results
+			// Call truncateToQuery
+			// Delete .searchhelper
 		}
-		// Output to screen the file list.
-		FileInputStream fstream;
+		
+		// Output to screen the file list.	
 		try {
-			fstream = new FileInputStream(root.getAbsolutePath() + "/.results");
+			FileInputStream fstream = new FileInputStream(root.getAbsolutePath() + "/.results");
 			DataInputStream in = new DataInputStream(fstream);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));
 			String strLine;
@@ -173,9 +187,32 @@ public class Searcher implements Runnable{
 	 * searchThroughPeers() passes a query to truncateToQuery(). truncateToQuery()
 	 * truncates .searchhelper based on this query.
 	 */
-	private void truncateToQuery(String query)
+	public void truncateToQuery(String query)
 	{
+		// Make sure this file is closed before calling this function
+		// For testing, using .search
+		File searchHelper = new File(root.getAbsolutePath() + "/.search");
 		
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(searchHelper));
+			String currentLine;
+			
+			while((currentLine = reader.readLine()) != null) 
+			{
+				boolean match = currentLine.substring(currentLine.lastIndexOf("/") + 1).compareTo(query) == 0;
+			    if(match)
+			    {
+			    	// Append match to .results
+					appendToFile(root.getAbsolutePath() + "/.results", currentLine);
+			    }
+			}			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	public void run(){}
 }
