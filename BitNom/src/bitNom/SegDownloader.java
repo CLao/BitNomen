@@ -23,9 +23,9 @@ public class SegDownloader implements Runnable {
 		
 		while (status != Dstatus.FINISHED) {
 			
-				download();
-				synchronized (parent) {		
-				// If the download failed, wait for the Download to give us a new path.
+			download();
+			synchronized (parent) {		
+			// If the download failed, wait for the Download to give us a new path.
 				if (status == Dstatus.FAILED)
 				{ 
 					parent.addStopped(this);
@@ -35,24 +35,23 @@ public class SegDownloader implements Runnable {
 				{
 					parent.finishSegment(this);
 				}
-				
-				synchronized (this){
-					if (status == Dstatus.FAILED)
-						try {
-							wait();
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							//e.printStackTrace();
-						}
-				}	
 			}
+			synchronized (this){
+				if (status == Dstatus.FAILED)
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						//e.printStackTrace();
+					}
+			}	
 		}
 		
 	}
 	
 	// Try to download from the current peer.
 	public void download(){
-		
+		status = Dstatus.DOWNLOADING;
 	}
 	
 	String dlPath;

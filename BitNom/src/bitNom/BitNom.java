@@ -1,11 +1,24 @@
 package bitNom;
 
 public class BitNom {
-
+	
+	public static Server server;
+	public static DownloadManager downloadMgr;
+	public static PeerLogger peerLgr;
+	public static Searcher searcher;
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		
+		if (args.length < 1) {
+			CCNFileProxy.usage();
+			return;
+		}
+		
+		Globals.ourHome = args[0];
+		
 		server = new Server(args);
 		(new Thread(server)).start();
 		
@@ -15,22 +28,11 @@ public class BitNom {
 		downloadMgr = new DownloadManager(peerLgr);
 		(new Thread (downloadMgr)).start();
 		
-		Searcher searcher = new Searcher(peerLgr);
-		(new Thread (searcher)).start();
-		
-		rqstHndlr = new RequestHandler(server, downloadMgr, peerLgr, searcher);	
-		(new Thread (rqstHndlr)).start();
-		
+		searcher = new Searcher();	
 		startBitNom();
 		
 	}
 	
 	public static void startBitNom(){}
-	
-	public static Server server;
-	public static DownloadManager downloadMgr;
-	public static PeerLogger peerLgr;
-	public static Searcher searcher;
-	public static RequestHandler rqstHndlr;
 
 }

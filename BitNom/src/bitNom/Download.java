@@ -2,17 +2,47 @@ package bitNom;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.io.*;
+import java.nio.channels.*;
+
+import org.ccnx.ccn.impl.support.Log;
+
 
 public class Download implements Runnable {
-	Download (String dpath, List<String> recentPeers, int segments){
+	
+	String path;
+	String outFile;
+	int nSeg;
+	int doneSegs;
+	List<String> peers;
+	List<SegDownloader> segDownloads;
+	ArrayBlockingQueue<SegDownloader> bstopped;
+	boolean segFin[];
+	boolean done;
+	Dstatus status;
+	
+	RandomAccessFile file;
+	FileChannel channel;
+	
+	Download (String dpath, String output, List<String> recentPeers, int segments){
 		path = dpath;
 		nSeg = segments;
 		peers = recentPeers;
 		segFin = new boolean[nSeg];
 		doneSegs = 0;
+		status = Dstatus.DOWNLOADING;
+		outFile = output;
 	}
 	
 	public void run() {
+		//Create a file channel for the file
+		try {
+			file = new RandomAccessFile (Globals.ourHome + outFile, "rwd");
+			channel = file.getChannel();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			Log.info("Could not open file for download!");
+		}
 		// Create a segment downloader for each segment and run them simultaneously
 		for (int i = 0; i < nSeg; i++) {
 			segDownloads.add(new SegDownloader(this, peers.get(i % peers.size()) + path, i));
@@ -41,7 +71,9 @@ public class Download implements Runnable {
 				
 			}
 		} catch (InterruptedException e){}
-		finally{}
+		finally{
+			System.out.println("Download " + Globals.ourHome + outFile + " Finished!");
+		}
 		
 		
 	}
@@ -71,13 +103,5 @@ public class Download implements Runnable {
 			segDownloads.remove(index);
 	}
 	
-	String path;
-	int nSeg;
-	int doneSegs;
-	List<String> peers;
-	List<SegDownloader> segDownloads;
-	//List<SegDownloader> stopped;
-	ArrayBlockingQueue<SegDownloader> bstopped;
-	boolean segFin[];
-	boolean done;
+
 }

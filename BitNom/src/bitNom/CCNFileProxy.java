@@ -117,11 +117,11 @@ public class CCNFileProxy implements CCNFilterListener {
 	public boolean handleInterest(Interest interest) {
 		// Alright, we've gotten an interest. Either it's an interest for a stream we're
 		// already reading, or it's a request for a new stream.
-		Log.info("CCNFileProxy main responder: got new interest: {0}", interest);
+		if (Globals.dbFP) Log.info("CCNFileProxy main responder: got new interest: {0}", interest);
 
 		// Test to see if we need to respond to it.
 		if (!_prefix.isPrefixOf(interest.name())) {
-			Log.info("Unexpected: got an interest not matching our prefix (which is {0})", _prefix);
+			if (Globals.dbFP) Log.info("Unexpected: got an interest not matching our prefix (which is {0})", _prefix);
 			return false;
 		}
 
@@ -134,14 +134,14 @@ public class CCNFileProxy implements CCNFilterListener {
 			return false;
 		} else if (interest.name().contains(CommandMarker.COMMAND_MARKER_BASIC_ENUMERATION.getBytes())) {
 			try {
-				Log.info("Got a name enumeration request: {0}", interest);
+				if (Globals.dbFP)Log.info("Got a name enumeration request: {0}", interest);
 				return nameEnumeratorResponse(interest);
 			} catch (IOException e) {
 				Log.warning("IOException generating name enumeration response to {0}: {1}: {2}", interest.name(), e.getClass().getName(), e.getMessage());
 				return false;
 			}
 		} else if (MetadataProfile.isHeader(interest.name())) {
-			Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
+			if (Globals.dbFP)Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
 			return false;
 		} 
 
@@ -159,12 +159,12 @@ public class CCNFileProxy implements CCNFilterListener {
 		ContentName fileNamePostfix = name.postfix(_prefix);
 		if (null == fileNamePostfix) {
 			// Only happens if interest.name() is not a prefix of _prefix.
-			Log.info("Unexpected: got an interest not matching our prefix (which is {0})", _prefix);
+			if (Globals.dbFP)Log.info("Unexpected: got an interest not matching our prefix (which is {0})", _prefix);
 			return null;
 		}
 
 		File fileToWrite = new File(_rootDirectory, fileNamePostfix.toString());
-		Log.info("file postfix {0}, resulting path name {1}", fileNamePostfix, fileToWrite.getAbsolutePath());
+		if (Globals.dbFP)Log.info("file postfix {0}, resulting path name {1}", fileNamePostfix, fileToWrite.getAbsolutePath());
 		return fileToWrite;
 	}
 	
@@ -176,7 +176,7 @@ public class CCNFileProxy implements CCNFilterListener {
 	protected boolean writeFile(Interest outstandingInterest) throws IOException {
 		
 		File fileToWrite = ccnNameToFilePath(outstandingInterest.name());
-		Log.info("CCNFileProxy: extracted request for file: " + fileToWrite.getAbsolutePath() + " exists? ", fileToWrite.exists());
+		if (Globals.dbFP)Log.info("CCNFileProxy: extracted request for file: " + fileToWrite.getAbsolutePath() + " exists? ", fileToWrite.exists());
 		if (!fileToWrite.exists()) {
 			Log.warning("File {0} does not exist. Ignoring request.", fileToWrite.getAbsoluteFile());
 			return false;
@@ -238,7 +238,7 @@ public class CCNFileProxy implements CCNFilterListener {
 		NameEnumerationResponse ner = new NameEnumerationResponse();
 		ner.setPrefix(new ContentName(neRequestPrefix, CommandMarker.COMMAND_MARKER_BASIC_ENUMERATION.getBytes()));
 		
-		Log.info("Directory to enumerate: {0}, last modified {1}", directoryToEnumerate.getAbsolutePath(), new CCNTime(directoryToEnumerate.lastModified()));
+		if (Globals.dbFP)Log.info("Directory to enumerate: {0}, last modified {1}", directoryToEnumerate.getAbsolutePath(), new CCNTime(directoryToEnumerate.lastModified()));
 		// stat() the directory to see when it last changed -- will change whenever
 		// a file is added or removed, which is the only thing that will change the
 		// list we return.

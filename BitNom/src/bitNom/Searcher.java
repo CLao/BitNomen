@@ -32,13 +32,13 @@ import java.lang.String;
  * all results are displayed on the console for the user to choose from. The selection is then downloaded.
  */
 
-public class Searcher implements Runnable{
+public class Searcher{
 	File root;
 	
-	public Searcher(String home)
+	public Searcher()
 	{
 		super();
-		root = new File(home);
+		root = new File(Globals.ourHome);
 		//searchDirectory(root);
 	}
 	
@@ -214,5 +214,4 @@ public class Searcher implements Runnable{
 			e.printStackTrace();
 		}
 	}
-	public void run(){}
 }

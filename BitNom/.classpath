@@ -3,7 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="src/bcprov-jdk15+-146.jar"/>
-	<classpathentry kind="lib" path="src/ccn.jar"/>
-	<classpathentry kind="lib" path="/home/kristina/Desktop/Eclipse_Projects/commons-io-2.1.jar"/>
+	<classpathentry kind="lib" path="src/ccn.jar" sourcepath="/home/christian/ccnx-0.5.0/javasrc"/>
+	<classpathentry kind="lib" path="/home/christian/git/BitNomen/BitNom/src/commons-io-2.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
