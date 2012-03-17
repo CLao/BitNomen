@@ -21,20 +21,30 @@ public class DownloadManager implements Runnable {
 	}
 	
 	public void run(){
+		
+		System.out.println("Starting BitNomen Download Manager...");
+		
 		// Update data about each download here.
-		while (true)
-		for (int i = 0; i < downloads.size(); i++)
-		{
-			Download cur = downloads.get(i);
-			float percent = cur.doneSegs/cur.nSeg;
-			System.out.println("Download " + i + ": " + percent  + "% completed.");
+		while (true) {
+			for (int i = 0; i < downloads.size(); i++)
+			{
+				Download cur = downloads.get(i);
+				float percent = (cur.doneSegs/cur.nSeg) * 100;
+				System.out.println("Download " + i + ": " + percent  + "% completed. \n\tFile: " + cur.outFile);
+			}
+			
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// Do nothing
+			}
 		}
 	}
 	
-	// Starts to download
+	// Starts to download a download.
+	// Parameters: The ccn prefix of a guaranteed location we can find a file.
 	public synchronized void initDownload(String prefix, String path, String outPath, int segments){
 		// Start a thread for the file.
-
 			downloads.add(new Download(path, outPath, peerLgr.recentPeers, segments));
 			(new Thread(downloads.get(downloads.size() - 1))).start();
 	}

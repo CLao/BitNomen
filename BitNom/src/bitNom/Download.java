@@ -39,51 +39,58 @@ public class Download implements Runnable {
 		try {
 			file = new RandomAccessFile (Globals.ourHome + outFile, "rwd");
 			channel = file.getChannel();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			Log.info("Could not open file for download!");
-		}
-		// Create a segment downloader for each segment and run them simultaneously
-		for (int i = 0; i < nSeg; i++) {
-			segDownloads.add(new SegDownloader(this, peers.get(i % peers.size()) + path, i));
-			(new Thread(segDownloads.get(segDownloads.size() - 1))).start();
-		}
-		
-		// Wait for a download thread to either finish or fail, and update our bookkeeping
 			
-		try {
-			while (!done)
-			{
-				// Give a new path to every download thread that failed
-				SegDownloader s = bstopped.take();
-				if (s.status == Dstatus.FAILED)
-					synchronized(s) {
-						s.dlPath = getNewPath();
-						removeStopped(s);
-						s.notify(); 
-					}
-				else if (s.status == Dstatus.FINISHED)
-				{
-					if (nSeg == doneSegs)
-						done = true;
-				}
-				else throw new RuntimeException("Impossible");
-				
+			// Create a segment downloader for each segment and run them simultaneously
+			for (int i = 0; i < nSeg; i++) {
+				segDownloads.add(new SegDownloader(this, peers.get(i % peers.size()) + path, i));
+				(new Thread(segDownloads.get(segDownloads.size() - 1))).start();
 			}
-		} catch (InterruptedException e){}
-		finally{
-			System.out.println("Download " + Globals.ourHome + outFile + " Finished!");
+			
+			// Wait for a download thread to either finish or fail, and update our bookkeeping
+				
+			try {
+				while (!done)
+				{
+					// Get a new segment downloader off the stopped list.
+					SegDownloader s = bstopped.take();
+					
+					// Give a new path to every download thread that failed.
+					if (s.status == Dstatus.FAILED)
+					{
+						synchronized(s) {
+							s.dlPath = getNewPath();
+							removeStopped(s);
+							s.notify(); 
+						}
+					}
+					
+					// Check if that segment finishes off the download.
+					else if (s.status == Dstatus.FINISHED)
+					{
+						if (nSeg == doneSegs){
+							done = true;
+							System.out.println("Download " + Globals.ourHome + outFile + " Finished!");
+						}
+					}
+					else throw new RuntimeException("Impossible");
+					
+				}
+			} catch (InterruptedException e){
+				status = Dstatus.FAILED;
+			}
+			
+		} catch (FileNotFoundException e) {
+			Log.info("Could not open file for download!");
+			status = Dstatus.FAILED;
 		}
-		
-		
 	}
 	
-	synchronized String getNewPath(){
+	private synchronized String getNewPath(){
 		String peer = peers.get(0);
 		return peer + path;
 	}
 	
-	synchronized void addStopped(SegDownloader s){
+	public synchronized void addStopped(SegDownloader s){
 		//stopped.add(s);
 		bstopped.add(s);
 	}
