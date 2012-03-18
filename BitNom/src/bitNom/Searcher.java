@@ -205,7 +205,7 @@ public class Searcher{
 			    	// Append match to .results
 					appendToFile(root.getAbsolutePath() + "/.results", currentLine);
 			    }
-			}			
+			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

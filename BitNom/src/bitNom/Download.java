@@ -20,6 +20,9 @@ public class Download implements Runnable {
 	private boolean segFin[];
 	private boolean done;
 	public Dstatus status;
+	public float percentDone;
+	public ArrayBlockingQueue<Boolean> waitToken;
+	private int waiters;
 	
 	RandomAccessFile file;
 	FileChannel channel;
@@ -34,8 +37,13 @@ public class Download implements Runnable {
 		outFile = output;
 		segDownloads = new ArrayList<SegDownloader>(segments);
 		bstopped = new ArrayBlockingQueue<SegDownloader>(segments);
+		waitToken = new ArrayBlockingQueue<Boolean>(1);
+		waitToken.add(true);
+		percentDone = 0;
+		waiters = 0;
 	}
 	
+	// Methods just for reading private members
 	public int nSeg() { return nSeg; }
 	public int doneSegs() { return doneSegs; }
 	public String outFile() { return outFile; }
@@ -53,8 +61,7 @@ public class Download implements Runnable {
 				(new Thread(segDownloads.get(segDownloads.size() - 1))).start();
 			}
 			
-			// Wait for a download thread to either finish or fail, and update our bookkeeping
-				
+			// Wait for a download thread to either finish or fail, and update our bookkeeping			
 			try {
 				while (!done)
 				{
@@ -76,7 +83,13 @@ public class Download implements Runnable {
 					{
 						if (nSeg == doneSegs){
 							done = true;
+							percentDone = 100;
 							System.out.println("Download " + Globals.ourHome + outFile + " Finished!");
+							
+							// "Notify" the waiters that we're done.
+							while (waiters > 0 && waitToken.take()){
+								waiters--;
+							}
 						}
 					}
 					else throw new RuntimeException("Impossible");
@@ -92,7 +105,8 @@ public class Download implements Runnable {
 		}
 	}
 	
-	private synchronized String getNewPath(){
+	// Give a new download path to a downloader.
+	public synchronized String getNewPath(){
 		String peer = peers.get(0);
 		return peer + path;
 	}
@@ -102,12 +116,12 @@ public class Download implements Runnable {
 		bstopped.add(s);
 	}
 	
-	synchronized void removeStopped(SegDownloader s){
+	public synchronized void removeStopped(SegDownloader s){
 		//stopped.remove(s);
 		bstopped.remove(s);
 	}
 	
-	synchronized void finishSegment(int s){
+	public synchronized void finishSegment(int s){
 			if (s < 0) 
 				throw new RuntimeException( "Tried to finish nonexistent segment." );
 			
@@ -115,5 +129,11 @@ public class Download implements Runnable {
 			doneSegs++;
 	}
 	
-
+	// Wait on this download to finish. Implemented by trying to push something to the
+	//	blocking queue. Since the pusher waits until the queue has space, only empty
+	//	the queue if the download is finished.
+	public void waitForMe(){
+		waiters++;
+		waitToken.add(true);
+	}
 }
