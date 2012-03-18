@@ -32,6 +32,8 @@ public class Download implements Runnable {
 		doneSegs = 0;
 		status = Dstatus.DOWNLOADING;
 		outFile = output;
+		segDownloads = new ArrayList<SegDownloader>(segments);
+		bstopped = new ArrayBlockingQueue<SegDownloader>(segments);
 	}
 	
 	public void run() {
@@ -42,7 +44,7 @@ public class Download implements Runnable {
 			
 			// Create a segment downloader for each segment and run them simultaneously
 			for (int i = 0; i < nSeg; i++) {
-				segDownloads.add(new SegDownloader(this, peers.get(i % peers.size()) + path, i));
+				segDownloads.add(new SegDownloader(this, "ccnx:/" + peers.get(i % peers.size()) + path, i));
 				(new Thread(segDownloads.get(segDownloads.size() - 1))).start();
 			}
 			
@@ -55,7 +57,7 @@ public class Download implements Runnable {
 					SegDownloader s = bstopped.take();
 					
 					// Give a new path to every download thread that failed.
-					if (s.status == Dstatus.FAILED)
+					if (s.status() == Dstatus.FAILED)
 					{
 						synchronized(s) {
 							s.dlPath = getNewPath();
@@ -65,7 +67,7 @@ public class Download implements Runnable {
 					}
 					
 					// Check if that segment finishes off the download.
-					else if (s.status == Dstatus.FINISHED)
+					else if (s.status() == Dstatus.FINISHED)
 					{
 						if (nSeg == doneSegs){
 							done = true;
@@ -79,7 +81,7 @@ public class Download implements Runnable {
 				status = Dstatus.FAILED;
 			}
 			
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			Log.info("Could not open file for download!");
 			status = Dstatus.FAILED;
 		}

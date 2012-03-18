@@ -52,13 +52,13 @@ public class PeerLogger implements Runnable {
 	}
 	
 	//Add to ArrayList
-	public synchronized void addPeertoList(String name, ArrayList<String> list) {
+	public synchronized void addPeertoList(String name, List<String> list) {
 		
 		list.add(name);
 	}
 		
 	//Remove from ArrayList
-	public synchronized void removePeerList(String name, ArrayList<String> list){
+	public synchronized void removePeerList(String name, List<String> list){
 			
 		list.remove(name);
 	}

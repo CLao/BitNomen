@@ -13,7 +13,7 @@ public class Globals {
 	
 	// Path variables
 	public static String ccnHome = "ccnx:/";	// Home directory on ccn
-	public static String ourHome;				// Home directory on disk
+	public static String ourHome = "/home/Christian/Desktop/";		// Home directory on disk
 	
 	// Segmentation variables
 	public static final int segSize = 524288;			// File segment size, in KiB

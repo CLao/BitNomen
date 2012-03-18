@@ -23,10 +23,13 @@ import org.ccnx.ccn.utils.CommonParameters;
 
 public class SegDownloader implements Runnable {
 
-	String dlPath;
-	Dstatus status;
-	Download parent;
-	int seg;
+	public String dlPath;
+	private Dstatus status;
+	private Download parent;
+	private int seg;
+	
+	public Dstatus status(){ return status; }
+	public int seg() { return seg; }
 	
 	SegDownloader(Download par, String ccnPath, int segNum){
 		parent = par;
@@ -55,7 +58,11 @@ public class SegDownloader implements Runnable {
 			synchronized (this){
 				if (status == Dstatus.FAILED)
 					try {
-						wait();
+						String oldPath = dlPath;
+						while (oldPath == dlPath)
+						{
+							wait();
+						}
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						//e.printStackTrace();
@@ -66,7 +73,7 @@ public class SegDownloader implements Runnable {
 	}
 	
 	// Try to download from the current peer.
-	public void download(){
+	private void download(){
 		status = Dstatus.DOWNLOADING;
 		
 		try {
@@ -75,12 +82,11 @@ public class SegDownloader implements Runnable {
 			// If we get more than one, put underneath the first as parent.
 			// Ideally want to use newVersion to get latest version. Start
 			// with random version.
-			//ContentName argName = ContentName.fromURI(args[CommonParameters.startArg]);
-			ContentName argName = ContentName.fromNative(dlPath);
+			ContentName argName = ContentName.fromURI(dlPath);
+			//ContentName argName = ContentName.fromNative(dlPath);
 			
 			CCNHandle handle = CCNHandle.open();
-			/*
-			File theFile = new File(args[CommonParameters.startArg + 1]);
+			/*File theFile = new File(args[CommonParameters.startArg + 1]);
 			if (theFile.exists()) {
 				System.out.println("Overwriting file: " + args[CommonParameters.startArg + 1]);
 			}
@@ -95,15 +101,17 @@ public class SegDownloader implements Runnable {
 			if (CommonParameters.timeout != null) {
 				input.setTimeout(CommonParameters.timeout); 
 			}
+			readsize = Globals.segSize;
 			byte [] buffer = new byte[readsize];
 			ByteBuffer buf = ByteBuffer.wrap(buffer);
 			
 			int readcount = 0;
 			long readtotal = 0;
 			int readtimes = 0;
+			int timesneeded = (Globals.segSize / readsize) + 1;
 			
 			//while (!input.eof()) {
-			while ((readcount = input.read(buffer)) != -1 && readtotal < Globals.segSize){
+			while (readtimes <= timesneeded && (readcount = input.read(buffer)) != -1){
 				//readcount = input.read(buffer);
 				readtotal += readcount;
 				
@@ -113,11 +121,23 @@ public class SegDownloader implements Runnable {
 				//output.flush();
 			}
 			
+			// Truncate the file if we're the last segment.
+			if (seg == parent.nSeg - 1)
+			{
+				parent.channel.truncate(((parent.nSeg - 1) * Globals.segSize) + readtotal);
+			}
+			
+			/*if (readcount == -1 )
+			{
+				throw new IOException("Download failed!");
+			}*/
 			
 			if (Globals.dbDL){
 				System.out.println("Segment took: "+(System.currentTimeMillis() - starttime)+"ms");
 				System.out.println("Retrieved Segment " + seg + " of " + dlPath + " got " + readtotal + " bytes.");
 			}
+			status = Dstatus.FINISHED;
+			//parent.bstopped.add(this);
 			//System.exit(0);
 
 		} catch (ConfigurationException e) {
@@ -127,13 +147,13 @@ public class SegDownloader implements Runnable {
 			System.out.println("Malformed name: " + dlPath + " " + e.getMessage());
 			synchronized(parent){
 				status = Dstatus.FAILED;
-				parent.bstopped.add(this);
+				//parent.bstopped.add(this);
 			}
 		} catch (IOException e) {
 			System.out.println("Cannot write file or read content. " + e.getMessage());
 			synchronized(parent){
 				status = Dstatus.FAILED;
-				parent.bstopped.add(this);
+				//parent.bstopped.add(this);
 			}
 		}
 	}

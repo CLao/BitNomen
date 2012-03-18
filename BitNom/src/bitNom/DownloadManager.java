@@ -34,7 +34,7 @@ public class DownloadManager implements Runnable {
 			}
 			
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(10000);
 			} catch (InterruptedException e) {
 				// Do nothing
 			}
@@ -45,7 +45,7 @@ public class DownloadManager implements Runnable {
 	// Parameters: The ccn prefix of a guaranteed location we can find a file.
 	public synchronized void initDownload(String prefix, String path, String outPath, int segments){
 		// Start a thread for the file.
-			downloads.add(new Download(path, outPath, peerLgr.recentPeers, segments));
+			downloads.add(new Download(path, "/" + outPath, peerLgr.recentPeers, segments));
 			(new Thread(downloads.get(downloads.size() - 1))).start();
 	}
 	
