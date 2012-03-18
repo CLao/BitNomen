@@ -129,6 +129,10 @@ public class Download implements Runnable {
 			doneSegs++;
 	}
 	
+	public void printStatus(){
+		System.out.println("File: " + outFile() + "\n\tDownload : " + percentDone  + "% completed.");
+	}
+	
 	// Wait on this download to finish. Implemented by trying to push something to the
 	//	blocking queue. Since the pusher waits until the queue has space, only empty
 	//	the queue if the download is finished.

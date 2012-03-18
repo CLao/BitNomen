@@ -28,17 +28,7 @@ public class DownloadManager implements Runnable {
 		while (true) {
 			
 			// Print the status of each download. Block if we have no downloads.
-			Download cur;
-			try {
-				cur = downloads.take();
-				System.out.println("File: " + cur.outFile() + "\n\tDownload : " + cur.percentDone  + "% completed.");
-				if(cur.percentDone != 100)
-				{
-					downloads.add(cur);
-				}
-			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-			}
+			printStatus(true);
 		
 			try {
 				Thread.sleep(1000);
@@ -46,6 +36,24 @@ public class DownloadManager implements Runnable {
 				// Do nothing
 			}
 		}
+	}
+	
+	// Prints all download statuses. 
+	//	If withBlock is true, thread blocks until
+	//	there is at least one download.
+	public void printStatus(boolean withBlock){
+		if (!downloads.isEmpty() || withBlock)
+			try {
+				Download cur;
+				cur = downloads.take();
+				cur.printStatus();
+				if(cur.percentDone != 100)
+				{
+					downloads.add(cur);
+				}
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+			}
 	}
 	
 	// Starts to download a download, and returns a reference to it in case you want to wait on it.
