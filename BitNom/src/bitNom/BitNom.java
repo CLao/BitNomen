@@ -35,13 +35,13 @@ public class BitNom {
 		downloadMgr = new DownloadManager(peerLgr);
 		(new Thread (downloadMgr)).start();
 		
-		peerLgr.addPeertoList("/files/", peerLgr.recentPeers);
+		peerLgr.addPeertoList("files/", peerLgr.recentPeers);
 		searcher = new Searcher();	
 		startBitNom();
 		
 	}
 	public static void test(){
-		downloadMgr.initDownload("ccnx:/files/", "epic.jpg", "thread.jpg", 1);
+		downloadMgr.initDownload("/files/", "epic.jpg", "thread.jpg", 1);
 	}
 	public static void startBitNom(){
 		test();

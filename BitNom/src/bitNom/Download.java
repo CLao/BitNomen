@@ -10,16 +10,16 @@ import org.ccnx.ccn.impl.support.Log;
 
 public class Download implements Runnable {
 	
-	String path;
-	String outFile;
-	int nSeg;
-	int doneSegs;
-	List<String> peers;
-	List<SegDownloader> segDownloads;
-	ArrayBlockingQueue<SegDownloader> bstopped;
-	boolean segFin[];
-	boolean done;
-	Dstatus status;
+	private String path;
+	private String outFile;
+	private int nSeg;
+	private int doneSegs;
+	public List<String> peers;
+	private List<SegDownloader> segDownloads;
+	public ArrayBlockingQueue<SegDownloader> bstopped;
+	private boolean segFin[];
+	private boolean done;
+	public Dstatus status;
 	
 	RandomAccessFile file;
 	FileChannel channel;
@@ -35,6 +35,11 @@ public class Download implements Runnable {
 		segDownloads = new ArrayList<SegDownloader>(segments);
 		bstopped = new ArrayBlockingQueue<SegDownloader>(segments);
 	}
+	
+	public int nSeg() { return nSeg; }
+	public int doneSegs() { return doneSegs; }
+	public String outFile() { return outFile; }
+	public boolean done() { return done; }
 	
 	public void run() {
 		//Create a file channel for the file
@@ -102,14 +107,12 @@ public class Download implements Runnable {
 		bstopped.remove(s);
 	}
 	
-	synchronized void finishSegment(SegDownloader s){
-			int index = segDownloads.indexOf(s);
-			if (index < 0) 
+	synchronized void finishSegment(int s){
+			if (s < 0) 
 				throw new RuntimeException( "Tried to finish nonexistent segment." );
 			
-			segFin[index] = true;
+			segFin[s] = true;
 			doneSegs++;
-			segDownloads.remove(index);
 	}
 	
 

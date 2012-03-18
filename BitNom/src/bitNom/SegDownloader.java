@@ -52,7 +52,8 @@ public class SegDownloader implements Runnable {
 				
 				if (status == Dstatus.FINISHED)
 				{
-					parent.finishSegment(this);
+					parent.finishSegment(seg);
+					parent.addStopped(this);
 				}
 			}
 			synchronized (this){
@@ -122,9 +123,9 @@ public class SegDownloader implements Runnable {
 			}
 			
 			// Truncate the file if we're the last segment.
-			if (seg == parent.nSeg - 1)
+			if (seg == parent.nSeg() - 1)
 			{
-				parent.channel.truncate(((parent.nSeg - 1) * Globals.segSize) + readtotal);
+				parent.channel.truncate(((parent.nSeg() - 1) * Globals.segSize) + readtotal);
 			}
 			
 			/*if (readcount == -1 )
@@ -137,7 +138,6 @@ public class SegDownloader implements Runnable {
 				System.out.println("Retrieved Segment " + seg + " of " + dlPath + " got " + readtotal + " bytes.");
 			}
 			status = Dstatus.FINISHED;
-			//parent.bstopped.add(this);
 			//System.exit(0);
 
 		} catch (ConfigurationException e) {
