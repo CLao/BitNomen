@@ -16,5 +16,5 @@ public class Globals {
 	public static String ourHome = "/home/Christian/Desktop/";		// Home directory on disk
 	
 	// Segmentation variables
-	public static final int segSize = 524288;			// File segment size, in KiB
+	public static final int segSize = 532480;			// File segment size, in KiB
 }

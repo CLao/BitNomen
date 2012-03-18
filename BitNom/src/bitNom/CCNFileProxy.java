@@ -80,11 +80,11 @@ public class CCNFileProxy implements CCNFilterListener {
 	static String DEFAULT_URI = "ccnx:/";
 	static int BUF_SIZE = 4096;
 	
-	protected boolean _finished = false;
-	protected ContentName _prefix; 
-	protected String _filePrefix;
-	protected File _rootDirectory;
-	protected CCNHandle _handle;
+	public boolean _finished = false;
+	public ContentName _prefix; 
+	public String _filePrefix;
+	public File _rootDirectory;
+	public CCNHandle _handle;
 	
 	private ContentName _responseName = null;
 	
@@ -144,14 +144,18 @@ public class CCNFileProxy implements CCNFilterListener {
 			if (Globals.dbFP)Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
 			return false;
 		} 
-
+		
+		Upload ul = new Upload(this, interest);
+		(new Thread(ul)).start();
+		return true;
+		/*
 		// Write the file
 		try {
 			return writeFile(interest);
 		} catch (IOException e) {
 			Log.warning("IOException writing file {0}: {1}: {2}", interest.name(), e.getClass().getName(), e.getMessage());
 			return false;
-		}
+		}*/
 	}
 	
 	protected File ccnNameToFilePath(ContentName name) {

@@ -49,7 +49,7 @@ public class Download implements Runnable {
 			
 			// Create a segment downloader for each segment and run them simultaneously
 			for (int i = 0; i < nSeg; i++) {
-				segDownloads.add(new SegDownloader(this, "ccnx:/" + peers.get(i % peers.size()) + path, i));
+				segDownloads.add(new SegDownloader(this, "ccnx:" + peers.get(i % peers.size()) + path, i));
 				(new Thread(segDownloads.get(segDownloads.size() - 1))).start();
 			}
 			
