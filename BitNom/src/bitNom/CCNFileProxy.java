@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import org.ccnx.ccn.CCNFilterListener;
 import org.ccnx.ccn.CCNHandle;
@@ -143,7 +144,39 @@ public class CCNFileProxy implements CCNFilterListener {
 		} else if (MetadataProfile.isHeader(interest.name())) {
 			if (Globals.dbFP)Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
 			return false;
-		} 
+		}
+		
+		String what = ".search";
+		
+		boolean containsSearch;
+		try {
+			containsSearch = interest.name().containsWhere(what) == 0;
+		} catch (URISyntaxException e) {
+			containsSearch = false;
+			// TODO Auto-generated catch block
+			System.out.println("Hi!");
+		}
+		
+		//Check name of file. If it is .search[search query] then generate search results
+		if (containsSearch)
+		{
+			
+			//generate 
+		}
+		
+		//If it is .bootstrap then generate peer list
+		what = ".bootstrap";
+		if (containsSearch)
+		{
+			
+		}
+		
+		//If .addPeer[peer name] then add peer
+		what = ".addPeer";
+		if (containsSearch)
+		{
+			
+		}
 		
 		Upload ul = new Upload(this, interest);
 		(new Thread(ul)).start();
