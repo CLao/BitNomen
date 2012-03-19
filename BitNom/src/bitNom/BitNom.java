@@ -41,7 +41,7 @@ public class BitNom {
 		
 	}
 	public static void test(){
-		downloadMgr.initDownload("/chris/", "cat.jpg", "thread.jpg", 1);
+		downloadMgr.initDownload("/chris/", "epic.jpg", "thread.jpg", 1);
 	}
 	public static void startBitNom(){
 		test();

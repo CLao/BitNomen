@@ -1,6 +1,6 @@
 package bitNom;
 
-import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 //TODO:
 // The DownloadManager, given a known location of a file, looks for identical
@@ -17,7 +17,7 @@ public class DownloadManager implements Runnable {
 	DownloadManager (PeerLogger pl){
 		peerLgr = pl;
 		nDownloads = 5;
-		downloads = Collections.synchronizedList(new ArrayList<Download>());
+		downloads = new LinkedBlockingQueue<Download>();
 	}
 	
 	public void run(){
@@ -26,31 +26,40 @@ public class DownloadManager implements Runnable {
 		
 		// Update data about each download here.
 		while (true) {
-			for (int i = 0; i < downloads.size(); i++)
-			{
-				Download cur = downloads.get(i);
-				float percent = (cur.doneSegs()/cur.nSeg()) * 100;
-				System.out.println("Download " + i + ": " + percent  + "% completed. \n\tFile: " + cur.outFile());
-			}
 			
+			// Print the status of each download. Block if we have no downloads.
+			Download cur;
 			try {
-				Thread.sleep(10000);
+				cur = downloads.take();
+				System.out.println("File: " + cur.outFile() + "\n\tDownload : " + cur.percentDone  + "% completed.");
+				if(cur.percentDone != 100)
+				{
+					downloads.add(cur);
+				}
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+			}
+		
+			try {
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				// Do nothing
 			}
 		}
 	}
 	
-	// Starts to download a download.
-	// Parameters: The ccn prefix of a guaranteed location we can find a file.
+	// Starts to download a download, and returns a reference to it in case you want to wait on it.
+	// Parameters: The ccn prefix of a guaranteed location we can find a file, the path to the file, 
+	//	the filepath to save it in, and the number of segments in the file.
 	public synchronized Download initDownload(String prefix, String path, String outPath, int segments){
 		// Start a thread for the file.
-			downloads.add(new Download(path, "/" + outPath, peerLgr.recentPeers, segments));
-			(new Thread(downloads.get(downloads.size() - 1))).start();
-			
-			return downloads.get(downloads.size()-1);
+			Download newDownload = new Download(path, "/" + outPath, peerLgr.recentPeers, segments);
+			downloads.add(newDownload);
+			(new Thread(newDownload)).start();
+			return newDownload;
 	}
 	
-	List<Download> downloads;
+	//List<Download> downloads;
+	LinkedBlockingQueue<Download> downloads;
 	PeerLogger peerLgr;
 }

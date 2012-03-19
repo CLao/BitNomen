@@ -102,21 +102,22 @@ public class SegDownloader implements Runnable {
 			if (CommonParameters.timeout != null) {
 				input.setTimeout(CommonParameters.timeout); 
 			}
-			readsize = Globals.segSize;
+			//readsize = Globals.segSize;
 			byte [] buffer = new byte[readsize];
 			ByteBuffer buf = ByteBuffer.wrap(buffer);
 			
 			int readcount = 0;
 			long readtotal = 0;
 			int readtimes = 0;
-			int timesneeded = (Globals.segSize / readsize) + 1;
-			
+			//int timesneeded = (Globals.segSize / readsize);
+			//input.seek(Globals.segSize * seg);
 			//while (!input.eof()) {
-			while (readtimes <= timesneeded && (readcount = input.read(buffer)) != -1){
+			while (/*readtimes <= timesneeded &&*/ (readcount = input.read(buffer)) != -1){
 				//readcount = input.read(buffer);
 				readtotal += readcount;
 				
 				parent.channel.write(buf, (Globals.segSize * seg) + (readsize * readtimes));
+				parent.percentDone += readcount/(Globals.segSize * parent.nSeg());
 				readtimes++;
 				//output.write(buffer, 0, readcount);
 				//output.flush();
@@ -128,10 +129,10 @@ public class SegDownloader implements Runnable {
 				parent.channel.truncate(((parent.nSeg() - 1) * Globals.segSize) + readtotal);
 			}
 			
-			/*if (readcount == -1 )
-			{
-				throw new IOException("Download failed!");
-			}*/
+			//if (readtimes < timesneeded )
+			//{
+			//	throw new IOException("Download failed! " + readtimes + " is less than " + timesneeded + "!");
+			///}
 			
 			if (Globals.dbDL){
 				System.out.println("Segment took: "+(System.currentTimeMillis() - starttime)+"ms");
