@@ -147,7 +147,7 @@ public class CCNFileProxy implements CCNFilterListener {
 				return false;
 			}
 		} else if (MetadataProfile.isHeader(interest.name())) {
-			if (Globals.dbFP)Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
+			//if (Globals.dbFP)Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
 			return false;
 		}
 		
@@ -183,15 +183,30 @@ public class CCNFileProxy implements CCNFilterListener {
 			
 		}
 		
+		// If the request is for a segmented file, upload it in parallel
 		if (SegmentationProfile.isSegment(interest.name())) {
-			long segNum = SegmentationProfile.getSegmentNumber(interest.name());
+			long segNum = 0; 
+			if (SegmentationProfile.isSegment(interest.name()))
+				segNum = SegmentationProfile.getSegmentNumber(interest.name());
 			if (Globals.dbFP) Log.info("Got request for segment {0} of file {1}.", segNum, interest.name());
 			
 			// Start actually uploading the file.
 			Upload ul = new Upload(this, interest);
 			(new Thread(ul)).start();
+			
 			return true;
 		}
+		
+		// If the request is for an unsegmented file, just upload it right now
+		if (SegmentationProfile.isUnsegmented(interest.name())) {
+			try {
+				return writeFile(interest);
+			} catch (IOException e) {
+				Log.warning("IOException writing file {0}: {1}: {2}", interest.name(), e.getClass().getName(), e.getMessage());
+				return false;
+			}
+		}
+		
 		System.out.println("I should not be here");
 		return false;
 		//Log.info("File proxy did something impossible, ignoring {0}.", interest.name());
@@ -206,8 +221,18 @@ public class CCNFileProxy implements CCNFilterListener {
 			if (Globals.dbFP)Log.info("Unexpected: got an interest not matching our prefix (which is {0})", _prefix);
 			return null;
 		}
-
-		File fileToWrite = new File(_rootDirectory, fileNamePostfix.toString());
+		
+		String filename = fileNamePostfix.toString();
+		
+		// Remove the segment number if we get a segmented file.
+		if (SegmentationProfile.isSegment(name)) {
+			//name.cut(name.count() - 2);
+			filename = (filename.split("/%"))[0];
+		}
+		
+		
+		
+		File fileToWrite = new File(_rootDirectory, filename);
 		if (Globals.dbFP)Log.info("file postfix {0}, resulting path name {1}", fileNamePostfix, fileToWrite.getAbsolutePath());
 		return fileToWrite;
 	}

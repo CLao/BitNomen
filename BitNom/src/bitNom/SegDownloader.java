@@ -100,7 +100,7 @@ public class SegDownloader implements Runnable {
 
 			// Set the stream timeout to be pretty high. It takes a while
 			//	for the other end to generate the segment.
-			input.setTimeout(10000000);
+			input.setTimeout(100000);
 			
 			// Buffer to read from the ccn stream
 			byte [] buffer = new byte[readsize];
@@ -111,13 +111,18 @@ public class SegDownloader implements Runnable {
 			long readtimes = 0;
 			
 			// Seek the stream to the point where our segment starts
-			//	TODO: Give responsibility of this to the uploader
-			//			We just want to read what we get.
+			// This gets done in both the uploader and downloader.
+			//	The uploader does it to serve the segment it needs to,
+			//	and the downloader does it to automatically make the stream
+			//	request the correct segment. A seek attempts to not get
+			//	more bytes than is necessary from the stream.
 			long position = (Globals.segSize * seg);
-			input.skip(position);
+			input.seek(position);
+			
+
 			
 			// While we can still read bytes from the ccn stream*
-			//	*The method auto-blocks. It will only fail when we reach the end.
+			//	*The method auto-blocks. It *should* only fail when we reach the end.
 			while ((readcount = input.read(buffer)) != -1 && readtotal < Globals.segSize){
 				
 				readtotal += readcount;

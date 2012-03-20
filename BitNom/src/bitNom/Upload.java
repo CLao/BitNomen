@@ -44,11 +44,13 @@ public class Upload implements Runnable{
 	
 	protected boolean writeFile(Interest outstandingInterest) throws IOException {
 			
-		long segNum = SegmentationProfile.getSegmentNumber(outInterest.name());		
+		long segNum = 0; 
+		if (SegmentationProfile.isSegment(outInterest.name()))
+			segNum = SegmentationProfile.getSegmentNumber(outInterest.name());
 		long segPos = segNum * Globals.segSize;
 		
 			File fileToWrite =  proxy.ccnNameToFilePath(outstandingInterest.name());
-			if (Globals.dbFP)Log.info("CCNFileProxy: extracted request for file: " + fileToWrite.getAbsolutePath() + " exists? ", fileToWrite.exists());
+			if (Globals.dbFP)Log.info("ThreadUpload: extracted request for file: " + fileToWrite.getAbsolutePath() + " exists? ", fileToWrite.exists());
 			if (!fileToWrite.exists()) {
 				Log.warning("File {0} does not exist. Ignoring request.", fileToWrite.getAbsoluteFile());
 				return false;
