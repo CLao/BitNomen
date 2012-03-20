@@ -7,7 +7,7 @@ public class Globals {
 	public static boolean dbFP = true;			// FileProxy
 	public static boolean dbDM = false;			// DownloadManager
 	public static boolean dbDL = true;			// Individual downloads
-	public static boolean dbSD = false;			// Segment Downloader
+	public static boolean dbSD = true;			// Segment Downloader
 	public static boolean dbPL = false;			// PeerLogger
 	public static boolean dbSR = false;			// Searcher
 	
@@ -16,5 +16,5 @@ public class Globals {
 	public static String ourHome = "/home/Christian/Desktop/";		// Home directory on disk
 	
 	// Segmentation variables
-	public static final long segSize = 532480;			// File segment size, in KiB
+	public static final long segSize = 4096;//532480;			// File segment size, in Bytes
 }

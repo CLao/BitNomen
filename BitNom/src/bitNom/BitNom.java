@@ -50,7 +50,7 @@ public class BitNom {
 		}
 		
 		peerLgr.addPeertoList("/chris/", peerLgr.recentPeers);
-		downloadMgr.initDownload("/chris/", "cat.jpg", "thread.jpg", 6);
+		downloadMgr.initDownload("/chris/", "epic.jpg", "thingo.txt", 31);
 	}
 	
 	public static void startBitNom(){

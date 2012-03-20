@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import org.ccnx.ccn.CCNFilterListener;
 import org.ccnx.ccn.CCNHandle;
@@ -86,6 +87,11 @@ public class CCNFileProxy implements CCNFilterListener {
 	public String _filePrefix;
 	public File _rootDirectory;
 	public CCNHandle _handle;
+	public static final int maxUploads = 100;
+	public ArrayBlockingQueue<Upload> _uploads;
+	
+	//Keep track of how many uploading threads we have at once.
+	public long uploadThreads;
 	
 	private ContentName _responseName = null;
 	
@@ -106,6 +112,8 @@ public class CCNFileProxy implements CCNFilterListener {
 		//set response name for NE requests
 		_responseName = KeyProfile.keyName(null, _handle.keyManager().getDefaultKeyID());
 		
+		// Keep only "maxUploads" many uploads active at a time. Default is 10
+		_uploads = new ArrayBlockingQueue<Upload>(maxUploads);
 	}
 	
 	public void start() throws IOException{
@@ -184,18 +192,10 @@ public class CCNFileProxy implements CCNFilterListener {
 			(new Thread(ul)).start();
 			return true;
 		}
-		
+		System.out.println("I should not be here");
 		return false;
 		//Log.info("File proxy did something impossible, ignoring {0}.", interest.name());
 		//return false;
-		/*
-		// Write the file
-		try {
-			return writeFile(interest);
-		} catch (IOException e) {
-			Log.warning("IOException writing file {0}: {1}: {2}", interest.name(), e.getClass().getName(), e.getMessage());
-			return false;
-		}*/
 	}
 	
 	protected File ccnNameToFilePath(ContentName name) {
@@ -345,7 +345,24 @@ public class CCNFileProxy implements CCNFilterListener {
 	}
 	
 	public boolean finished() { return _finished; }
-
+	
+	public synchronized void addUploader(Upload u){
+		try {
+			_uploads.put(u);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public synchronized void removeUploader(){
+		try {
+			_uploads.take();
+		} catch (InterruptedException e) {
+			Log.warning("Tried to free upload when we have no uploaders");
+		}
+	}
+	
 	/**
 	 * @param args
 	 */

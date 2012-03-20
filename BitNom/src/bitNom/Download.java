@@ -10,13 +10,19 @@ import org.ccnx.ccn.impl.support.Log;
 
 public class Download implements Runnable {
 	
+	// Only have at most maxThreads running at a time
+	public static final int maxThreads = 20;
+	
 	private String path;
 	private String outFile;
 	private int nSeg;
 	private int doneSegs;
+	
 	public List<String> peers;
 	private List<SegDownloader> segDownloads;
 	public ArrayBlockingQueue<SegDownloader> bstopped;
+	public ArrayBlockingQueue<SegDownloader> active;
+	
 	private boolean segFin[];
 	private boolean done;
 	public Dstatus status;
@@ -35,12 +41,17 @@ public class Download implements Runnable {
 		doneSegs = 0;
 		status = Dstatus.DOWNLOADING;
 		outFile = output;
+		
 		segDownloads = new ArrayList<SegDownloader>(segments);
 		bstopped = new ArrayBlockingQueue<SegDownloader>(segments);
+		active = new ArrayBlockingQueue<SegDownloader>(maxThreads);
+		
+		// Helping variables to allow a thread to blocking wait on this download.
 		waitToken = new ArrayBlockingQueue<Boolean>(1);
 		waitToken.add(true);
-		percentDone = 0;
 		waiters = 0;
+		
+		percentDone = 0;	
 	}
 	
 	// Methods just for reading private members
@@ -54,6 +65,7 @@ public class Download implements Runnable {
 		try {
 			file = new RandomAccessFile (Globals.ourHome + outFile, "rwd");
 			channel = file.getChannel();
+			
 			
 			// Create a segment downloader for each segment and run them simultaneously
 			for (int i = 0; i < nSeg; i++) {
@@ -112,19 +124,42 @@ public class Download implements Runnable {
 	}
 	
 	public synchronized void addStopped(SegDownloader s){
-		//stopped.add(s);
-		bstopped.add(s);
+		try {
+			bstopped.put(s);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public synchronized void removeStopped(SegDownloader s){
-		//stopped.remove(s);
 		bstopped.remove(s);
+	}
+	
+	// Only call this from a downloader thread.
+	//	If the active queue is full, the downloader will
+	//	block until a spot frees up.
+	public void addActive(SegDownloader s){
+		try {
+			active.put(s);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void removeActive(SegDownloader s){
+		try {
+			if (doneSegs < nSeg)
+				active.take();
+		} catch (InterruptedException e) {
+			// Nothing
+		}
 	}
 	
 	public synchronized void finishSegment(int s){
 			if (s < 0) 
 				throw new RuntimeException( "Tried to finish nonexistent segment." );
-			
 			segFin[s] = true;
 			doneSegs++;
 	}
@@ -138,6 +173,11 @@ public class Download implements Runnable {
 	//	the queue if the download is finished.
 	public void waitForMe(){
 		waiters++;
-		waitToken.add(true);
+		try {
+			waitToken.put(true);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

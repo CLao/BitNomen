@@ -6,7 +6,6 @@ import java.nio.*;
 
 import org.ccnx.ccn.CCNHandle;
 import org.ccnx.ccn.config.ConfigurationException;
-//import org.ccnx.ccn.io.CCNFileInputStream;
 import org.ccnx.ccn.io.CCNInputStream;
 import org.ccnx.ccn.protocol.ContentName;
 import org.ccnx.ccn.protocol.MalformedContentNameStringException;
@@ -38,26 +37,32 @@ public class SegDownloader implements Runnable {
 	}
 	
 	public void run(){
+		parent.addActive(this);
 		while (status != Dstatus.FINISHED) {
-			
+			String oldPath = dlPath;
 			download();
 			synchronized (parent) {		
-			// If the download failed, wait for the Download to give us a new path.
+				// If the downloading failed, notify the Download to give us a new path.
 				if (status == Dstatus.FAILED)
 				{ 
 					parent.addStopped(this);
 				}
 				
-				if (status == Dstatus.FINISHED)
+				// If the downloading succeeded, notify the Download we're done
+				else if (status == Dstatus.FINISHED)
 				{
 					parent.finishSegment(seg);
+					parent.removeActive(this);
 					parent.addStopped(this);
 				}
 			}
 			synchronized (this){
 				if (status == Dstatus.FAILED)
 					try {
-						String oldPath = dlPath;
+						// Wait for our download path to update.
+						// This is in a while loop in case the Download gives us a new download
+						//	before we even start waiting, or if we get woken up by
+						//	something besides the Download somehow.
 						while (oldPath == dlPath)
 						{
 							wait();
@@ -72,6 +77,9 @@ public class SegDownloader implements Runnable {
 	}
 	
 	// Try to download from the current peer.
+	// This section is mostly copied and pasted from ccngetfile.
+	//	Except the file output stream was changed into a file channel
+	//	in order to facilitate skipping by some byte offset.
 	private void download(){
 		status = Dstatus.DOWNLOADING;
 		
@@ -82,68 +90,66 @@ public class SegDownloader implements Runnable {
 			// Ideally want to use newVersion to get latest version. Start
 			// with random version.
 			ContentName argName = ContentName.fromURI(dlPath);
-			//ContentName argName = ContentName.fromNative(dlPath);
-			
 			CCNHandle handle = CCNHandle.open();
-			/*File theFile = new File(args[CommonParameters.startArg + 1]);
-			if (theFile.exists()) {
-				System.out.println("Overwriting file: " + args[CommonParameters.startArg + 1]);
-			}
-			FileOutputStream output = new FileOutputStream(theFile);
-			*/
 			long starttime = System.currentTimeMillis();
 			CCNInputStream input;
 			if (CommonParameters.unversioned)
 				input = new CCNInputStream(argName, handle);
 			else
 				input = new CCNFileInputStream(argName, handle);
-			/*if (CommonParameters.timeout != null) {
-				input.setTimeout(CommonParameters.timeout); 
-			}*/
-			
+
+			// Set the stream timeout to be pretty high. It takes a while
+			//	for the other end to generate the segment.
 			input.setTimeout(10000000);
 			
-			// Give the other end time to create their file if they still need to.
-			
-			//readsize = Globals.segSize;
+			// Buffer to read from the ccn stream
 			byte [] buffer = new byte[readsize];
 			ByteBuffer buf = ByteBuffer.wrap(buffer);
 			
 			int readcount = 0;
-			long readtotal = 0;
-			int readtimes = 0;
-			//int timesneeded = (Globals.segSize / readsize);
-			input.seek(Globals.segSize * seg);
-			//while (!input.eof()) {
-			while ((readcount = input.read(buffer)) != -1){
+			int readtotal = 0;
+			long readtimes = 0;
+			
+			// Seek the stream to the point where our segment starts
+			//	TODO: Give responsibility of this to the uploader
+			//			We just want to read what we get.
+			long position = (Globals.segSize * seg);
+			input.skip(position);
+			
+			// While we can still read bytes from the ccn stream*
+			//	*The method auto-blocks. It will only fail when we reach the end.
+			while ((readcount = input.read(buffer)) != -1 && readtotal < Globals.segSize){
+				
 				readtotal += readcount;
-
-				parent.channel.write(buf, (Globals.segSize * seg) + (readsize * readtimes));
-				parent.percentDone += readcount/(Globals.segSize * parent.nSeg());
+				parent.channel.write(buf, position + readtimes * readsize);
+				buf.position(0);	
+				
+				// Update the percent we have downloaded.
+				parent.percentDone += 1 + readcount/(Globals.segSize * parent.nSeg());
 				readtimes++;
 			}
 			
-			// Truncate the file if we're the last segment.
+			// Truncate the file if we're the last segment, since we wrote past the actual end of the file.
 			if (seg == parent.nSeg() - 1)
 			{
 				parent.channel.truncate(((parent.nSeg() - 1) * Globals.segSize) + readtotal);
 			}
 			
-			//if (readtimes < timesneeded )
-			//{
-			//	throw new IOException("Download failed! " + readtimes + " is less than " + timesneeded + "!");
-			///}
 			
-			if (Globals.dbDL){
+			if (Globals.dbDL || Globals.dbSD){
 				System.out.println("Segment took: "+(System.currentTimeMillis() - starttime)+"ms");
 				System.out.println("Retrieved Segment " + seg + " of " + dlPath + " got " + readtotal + " bytes.");
 			}
 			status = Dstatus.FINISHED;
-			//System.exit(0);
 
+			// Exceptions mostly untouched from ccngetfile, except instead of exiting, we tell the
+			//	Download that we failed.
 		} catch (ConfigurationException e) {
 			System.out.println("Configuration exception in ccngetfile: " + e.getMessage());
-			e.printStackTrace();
+			synchronized(parent){
+				status = Dstatus.FAILED;
+				//parent.bstopped.add(this);
+			}
 		} catch (MalformedContentNameStringException e) {
 			System.out.println("Malformed name: " + dlPath + " " + e.getMessage());
 			synchronized(parent){

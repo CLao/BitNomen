@@ -18,15 +18,22 @@ public class Upload implements Runnable{
 	CCNFileProxy proxy;
 	public boolean done;
 	private Interest outInterest;
-	
+
 	
 	Upload(CCNFileProxy fp, Interest interest){
 		proxy = fp;
 		done = false;
 		outInterest = interest;
+
 	}
 	
 	public void run() {
+		
+		// Add ourselves to the uploader set. If the proxy already has
+		//	maxUploads uploaders running, we'll block until there is a
+		//	free spot.
+		proxy.addUploader(this);
+		
 		try {
 			writeFile(outInterest);
 			done = true;
@@ -40,7 +47,7 @@ public class Upload implements Runnable{
 		long segNum = SegmentationProfile.getSegmentNumber(outInterest.name());		
 		long segPos = segNum * Globals.segSize;
 		
-			File fileToWrite = proxy.ccnNameToFilePath(outstandingInterest.name());
+			File fileToWrite =  proxy.ccnNameToFilePath(outstandingInterest.name());
 			if (Globals.dbFP)Log.info("CCNFileProxy: extracted request for file: " + fileToWrite.getAbsolutePath() + " exists? ", fileToWrite.exists());
 			if (!fileToWrite.exists()) {
 				Log.warning("File {0} does not exist. Ignoring request.", fileToWrite.getAbsoluteFile());
@@ -71,6 +78,9 @@ public class Upload implements Runnable{
 			// is unversioned, it will version it).
 			CCNFileOutputStream ccnout = new CCNFileOutputStream(versionedName, proxy._handle);
 			
+			// Set the size of the segment
+			//ccnout.setBlockSize((int)Globals.segSize);
+			
 			// We have an interest already, register it so we can write immediately.
 			ccnout.addOutstandingInterest(outstandingInterest);
 			
@@ -78,18 +88,23 @@ public class Upload implements Runnable{
 			boolean succeeded = false;
 			
 			// Skip the amount of bytes until we get to the next segment
-			//long skipped = fis.skip(segNum * Globals.segSize);
-			//if (skipped != segNum * Globals.segSize){
+			long skipped = fis.skip(segNum * Globals.segSize);
+			if (skipped != segNum * Globals.segSize){
 				succeeded = true;
 				int read = fis.read(buffer);
-				while (read >= 0) {
+				int total = read;
+				while (read >= 0 && total < Globals.segSize) {
 					ccnout.write(buffer, 0, read);
 					read = fis.read(buffer);
+					total += read;
 				} 
-			//}
+			}
 			fis.close();
 			ccnout.close(); // will flush
 			
+			// Let the proxy know we can give up our space.
+			proxy.removeUploader();
+
 			return succeeded;
 		}
 }
