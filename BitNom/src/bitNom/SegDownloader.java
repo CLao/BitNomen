@@ -23,13 +23,13 @@ public class SegDownloader implements Runnable {
 
 	public String dlPath;
 	private Dstatus status;
-	private Download parent;
+	private ChunkDownload parent;
 	private int seg;
 	
 	public Dstatus status(){ return status; }
 	public int seg() { return seg; }
 	
-	SegDownloader(Download par, String ccnPath, int segNum){
+	SegDownloader(ChunkDownload par, String ccnPath, int segNum){
 		parent = par;
 		dlPath = ccnPath;
 		status = Dstatus.NONE;

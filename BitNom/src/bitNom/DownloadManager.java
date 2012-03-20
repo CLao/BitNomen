@@ -17,7 +17,7 @@ public class DownloadManager implements Runnable {
 	DownloadManager (PeerLogger pl){
 		peerLgr = pl;
 		nDownloads = 5;
-		downloads = new LinkedBlockingQueue<Download>();
+		downloads = new LinkedBlockingQueue<ChunkDownload>();
 	}
 	
 	public void run(){
@@ -44,7 +44,7 @@ public class DownloadManager implements Runnable {
 	public void printStatus(boolean withBlock){
 		if (!downloads.isEmpty() || withBlock)
 			try {
-				Download cur;
+				ChunkDownload cur;
 				cur = downloads.take();
 				cur.printStatus();
 				if(cur.percentDone != 100)
@@ -59,16 +59,16 @@ public class DownloadManager implements Runnable {
 	// Starts to download a download, and returns a reference to it in case you want to wait on it.
 	// Parameters: The ccn prefix of a guaranteed location we can find a file, the path to the file, 
 	//	the filepath to save it in, and the number of segments in the file.
-	public synchronized Download initDownload(String prefix, String path, String outPath, int segments){
+	public synchronized ChunkDownload initDownload(String prefix, String path, String outPath, int segments){
 		// Start a thread for the file.
 		
-			Download newDownload = new Download(path, "/" + outPath, peerLgr.recentPeers, segments);
+			ChunkDownload newDownload = new ChunkDownload(path, "/" + outPath, peerLgr.recentPeers, segments);
 			downloads.add(newDownload);
 			(new Thread(newDownload)).start();
 			return newDownload;
 	}
 	
 	//List<Download> downloads;
-	LinkedBlockingQueue<Download> downloads;
+	LinkedBlockingQueue<ChunkDownload> downloads;
 	PeerLogger peerLgr;
 }

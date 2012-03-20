@@ -7,8 +7,13 @@ import java.nio.channels.*;
 
 import org.ccnx.ccn.impl.support.Log;
 
+// TODO: Ideally, we want this to be the actual "Download"
+//	class; the idea is to have the idea of a "segment"
+//	be equal to the idea of a "chunk" However, for some reason,
+//	ccnx can't send single files greater than ~512KiB, at
+//	least through the file proxy.
 
-public class Download implements Runnable {
+public class ChunkDownload implements Runnable {
 	
 	// Only have at most maxThreads running at a time
 	public static final int maxThreads = 20;
@@ -33,7 +38,7 @@ public class Download implements Runnable {
 	RandomAccessFile file;
 	FileChannel channel;
 	
-	Download (String dpath, String output, List<String> recentPeers, int segments){
+	ChunkDownload (String dpath, String output, List<String> recentPeers, int segments){
 		path = dpath;
 		nSeg = segments;
 		peers = recentPeers;
