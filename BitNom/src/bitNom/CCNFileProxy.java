@@ -130,10 +130,7 @@ public class CCNFileProxy implements CCNFilterListener {
 		// handle interests for the first segment of a file, and not the first segment
 		// of the header. Order tests so most common one (segments other than first, non-header)
 		// fails first.
-		if (SegmentationProfile.isSegment(interest.name()) && !SegmentationProfile.isFirstSegment(interest.name())) {
-			Log.info("Got an interest for something other than a first segment, ignoring {0}.", interest.name());
-			return false;
-		} else if (interest.name().contains(CommandMarker.COMMAND_MARKER_BASIC_ENUMERATION.getBytes())) {
+		if (interest.name().contains(CommandMarker.COMMAND_MARKER_BASIC_ENUMERATION.getBytes())) {
 			try {
 				if (Globals.dbFP)Log.info("Got a name enumeration request: {0}", interest);
 				return nameEnumeratorResponse(interest);
@@ -178,9 +175,19 @@ public class CCNFileProxy implements CCNFilterListener {
 			
 		}
 		
-		Upload ul = new Upload(this, interest);
-		(new Thread(ul)).start();
-		return true;
+		if (SegmentationProfile.isSegment(interest.name())) {
+			long segNum = SegmentationProfile.getSegmentNumber(interest.name());
+			if (Globals.dbFP) Log.info("Got request for segment {0} of file {1}.", segNum, interest.name());
+			
+			// Start actually uploading the file.
+			Upload ul = new Upload(this, interest);
+			(new Thread(ul)).start();
+			return true;
+		}
+		
+		return false;
+		//Log.info("File proxy did something impossible, ignoring {0}.", interest.name());
+		//return false;
 		/*
 		// Write the file
 		try {

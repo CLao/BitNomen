@@ -61,6 +61,7 @@ public class DownloadManager implements Runnable {
 	//	the filepath to save it in, and the number of segments in the file.
 	public synchronized Download initDownload(String prefix, String path, String outPath, int segments){
 		// Start a thread for the file.
+		
 			Download newDownload = new Download(path, "/" + outPath, peerLgr.recentPeers, segments);
 			downloads.add(newDownload);
 			(new Thread(newDownload)).start();

@@ -4,7 +4,7 @@ public class Globals {
 	// Set these booleans to true if you want to have
 	//	debug print statements for that particular class,
 	//	otherwise false if you want to suppress them.
-	public static boolean dbFP = false;			// FileProxy
+	public static boolean dbFP = true;			// FileProxy
 	public static boolean dbDM = false;			// DownloadManager
 	public static boolean dbDL = true;			// Individual downloads
 	public static boolean dbSD = false;			// Segment Downloader
@@ -16,5 +16,5 @@ public class Globals {
 	public static String ourHome = "/home/Christian/Desktop/";		// Home directory on disk
 	
 	// Segmentation variables
-	public static final int segSize = 532480;			// File segment size, in KiB
+	public static final long segSize = 532480;			// File segment size, in KiB
 }

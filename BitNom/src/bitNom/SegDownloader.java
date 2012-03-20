@@ -14,7 +14,6 @@ import org.ccnx.ccn.utils.CommonParameters;
 
 
 //TODO:
-// Make this class run on a thread.
 // Decide which peer to download from first. i.e. which order to query the peers in.
 
 // The Downloader should provide methods to:
@@ -39,7 +38,6 @@ public class SegDownloader implements Runnable {
 	}
 	
 	public void run(){
-		
 		while (status != Dstatus.FINISHED) {
 			
 			download();
@@ -99,9 +97,14 @@ public class SegDownloader implements Runnable {
 				input = new CCNInputStream(argName, handle);
 			else
 				input = new CCNFileInputStream(argName, handle);
-			if (CommonParameters.timeout != null) {
+			/*if (CommonParameters.timeout != null) {
 				input.setTimeout(CommonParameters.timeout); 
-			}
+			}*/
+			
+			input.setTimeout(10000000);
+			
+			// Give the other end time to create their file if they still need to.
+			
 			//readsize = Globals.segSize;
 			byte [] buffer = new byte[readsize];
 			ByteBuffer buf = ByteBuffer.wrap(buffer);
@@ -110,17 +113,14 @@ public class SegDownloader implements Runnable {
 			long readtotal = 0;
 			int readtimes = 0;
 			//int timesneeded = (Globals.segSize / readsize);
-			//input.seek(Globals.segSize * seg);
+			input.seek(Globals.segSize * seg);
 			//while (!input.eof()) {
-			while (/*readtimes <= timesneeded &&*/ (readcount = input.read(buffer)) != -1){
-				//readcount = input.read(buffer);
+			while ((readcount = input.read(buffer)) != -1){
 				readtotal += readcount;
-				
+
 				parent.channel.write(buf, (Globals.segSize * seg) + (readsize * readtimes));
 				parent.percentDone += readcount/(Globals.segSize * parent.nSeg());
 				readtimes++;
-				//output.write(buffer, 0, readcount);
-				//output.flush();
 			}
 			
 			// Truncate the file if we're the last segment.

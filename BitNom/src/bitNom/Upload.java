@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import org.ccnx.ccn.impl.support.Log;
 import org.ccnx.ccn.io.CCNFileOutputStream;
+import org.ccnx.ccn.profiles.SegmentationProfile;
 import org.ccnx.ccn.profiles.VersioningProfile;
 import org.ccnx.ccn.protocol.CCNTime;
 import org.ccnx.ccn.protocol.ContentName;
@@ -36,11 +37,20 @@ public class Upload implements Runnable{
 	
 	protected boolean writeFile(Interest outstandingInterest) throws IOException {
 			
+		long segNum = SegmentationProfile.getSegmentNumber(outInterest.name());		
+		long segPos = segNum * Globals.segSize;
+		
 			File fileToWrite = proxy.ccnNameToFilePath(outstandingInterest.name());
 			if (Globals.dbFP)Log.info("CCNFileProxy: extracted request for file: " + fileToWrite.getAbsolutePath() + " exists? ", fileToWrite.exists());
 			if (!fileToWrite.exists()) {
 				Log.warning("File {0} does not exist. Ignoring request.", fileToWrite.getAbsoluteFile());
 				return false;
+			}
+			
+			if (segPos > fileToWrite.length())
+			{
+			//	Log.warning("Ignoring request for segment {0} of file {1}. File is {2} bytes long.", segNum, fileToWrite.getName(), fileToWrite.length());
+			//	return false;
 			}
 			
 			FileInputStream fis = null;
@@ -65,15 +75,21 @@ public class Upload implements Runnable{
 			ccnout.addOutstandingInterest(outstandingInterest);
 			
 			byte [] buffer = new byte[CCNFileProxy.BUF_SIZE];
+			boolean succeeded = false;
 			
-			int read = fis.read(buffer);
-			while (read >= 0) {
-				ccnout.write(buffer, 0, read);
-				read = fis.read(buffer);
-			} 
+			// Skip the amount of bytes until we get to the next segment
+			//long skipped = fis.skip(segNum * Globals.segSize);
+			//if (skipped != segNum * Globals.segSize){
+				succeeded = true;
+				int read = fis.read(buffer);
+				while (read >= 0) {
+					ccnout.write(buffer, 0, read);
+					read = fis.read(buffer);
+				} 
+			//}
 			fis.close();
 			ccnout.close(); // will flush
 			
-			return true;
+			return succeeded;
 		}
 }
