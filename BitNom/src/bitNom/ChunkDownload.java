@@ -22,6 +22,7 @@ public class ChunkDownload implements Runnable {
 	private String outFile;
 	private int nSeg;
 	private int doneSegs;
+	private Download _parent;
 	
 	public List<String> peers;
 	private List<SegDownloader> segDownloads;
@@ -32,13 +33,13 @@ public class ChunkDownload implements Runnable {
 	private boolean done;
 	public Dstatus status;
 	public float percentDone;
-	public ArrayBlockingQueue<Boolean> waitToken;
+	private ArrayBlockingQueue<Boolean> waitToken;
 	private int waiters;
 	
 	RandomAccessFile file;
 	FileChannel channel;
 	
-	ChunkDownload (String dpath, String output, List<String> recentPeers, int segments){
+	ChunkDownload (String dpath, String output, List<String> recentPeers, int segments, Download parent){
 		path = dpath;
 		nSeg = segments;
 		peers = recentPeers;
@@ -46,6 +47,7 @@ public class ChunkDownload implements Runnable {
 		doneSegs = 0;
 		status = Dstatus.DOWNLOADING;
 		outFile = output;
+		_parent = parent;
 		
 		segDownloads = new ArrayList<SegDownloader>(segments);
 		bstopped = new ArrayBlockingQueue<SegDownloader>(segments);
@@ -68,6 +70,7 @@ public class ChunkDownload implements Runnable {
 	public void run() {
 		//Create a file channel for the file
 		try {
+			_parent.addToActive(this);
 			file = new RandomAccessFile (Globals.ourHome + outFile, "rwd");
 			channel = file.getChannel();
 			
@@ -118,6 +121,9 @@ public class ChunkDownload implements Runnable {
 			
 		} catch (IOException e) {
 			Log.info("Could not open file for download!");
+			status = Dstatus.FAILED;
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
 			status = Dstatus.FAILED;
 		}
 	}
