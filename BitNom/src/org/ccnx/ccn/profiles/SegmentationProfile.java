@@ -75,7 +75,7 @@ public class SegmentationProfile implements CCNProfile {
 	 * so 32 bytes with unused bytes in the 192-bit case (otherwise we'd have
 	 * to use the LCM, 96 bytes, which is really inefficient).
 	 */
-	public static final int DEFAULT_BLOCKSIZE = 524288;
+	public static final int DEFAULT_BLOCKSIZE = 4096;
 	public static final int DEFAULT_INCREMENT = 1;
 	public static final int DEFAULT_SCALE = 1;
 	
