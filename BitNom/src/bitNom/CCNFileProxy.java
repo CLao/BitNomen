@@ -35,6 +35,7 @@ import org.ccnx.ccn.profiles.CommandMarker;
 import org.ccnx.ccn.profiles.SegmentationProfile;
 import org.ccnx.ccn.profiles.VersioningProfile;
 import org.ccnx.ccn.profiles.metadata.MetadataProfile;
+import org.ccnx.ccn.profiles.nameenum.CCNNameEnumerator;
 import org.ccnx.ccn.profiles.nameenum.NameEnumerationResponse;
 import org.ccnx.ccn.profiles.nameenum.NameEnumerationResponse.NameEnumerationResponseMessage;
 import org.ccnx.ccn.profiles.nameenum.NameEnumerationResponse.NameEnumerationResponseMessage.NameEnumerationResponseMessageObject;
@@ -138,18 +139,21 @@ public class CCNFileProxy implements CCNFilterListener {
 		// handle interests for the first segment of a file, and not the first segment
 		// of the header. Order tests so most common one (segments other than first, non-header)
 		// fails first.
-		if (interest.name().contains(CommandMarker.COMMAND_MARKER_BASIC_ENUMERATION.getBytes())) {
+		if (SegmentationProfile.isSegment(interest.name()) && !SegmentationProfile.isFirstSegment(interest.name())) {
+			//Log.info("Got an interest for something other than a first segment, ignoring {0}.", interest.name());
+			return false;
+		} else if (interest.name().contains(CommandMarker.COMMAND_MARKER_BASIC_ENUMERATION.getBytes())) {
 			try {
-				if (Globals.dbFP)Log.info("Got a name enumeration request: {0}", interest);
+				Log.info("Got a name enumeration request: {0}", interest);
 				return nameEnumeratorResponse(interest);
 			} catch (IOException e) {
 				Log.warning("IOException generating name enumeration response to {0}: {1}: {2}", interest.name(), e.getClass().getName(), e.getMessage());
 				return false;
 			}
 		} else if (MetadataProfile.isHeader(interest.name())) {
-			//if (Globals.dbFP)Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
+			Log.info("Got an interest for the first segment of the header, ignoring {0}.", interest.name());
 			return false;
-		}
+		} 
 		
 		String what = ".search";
 		
@@ -183,7 +187,17 @@ public class CCNFileProxy implements CCNFilterListener {
 			
 		}
 		
+		// If the request is for a file chunk, generate the chunk.
+		if (Download.isChunk(interest.name())) {
+			int n = Download.getChunkNumber(interest.name());
+			Chunker.chunk(Download.getChunkFilename(ccnNameToFilePath(interest.name())), n);
+			}
+		
 		// If the request is for a segmented file, upload it in parallel
+		// TODO: The current implementation of ccnx has some sort of "flow controller"
+		//	Simply put, it thinks something went wrong if we try to upload things
+		//	in parallel. We can only upload in serial for now.
+		/*
 		if (SegmentationProfile.isSegment(interest.name())) {
 			long segNum = 0; 
 			if (SegmentationProfile.isSegment(interest.name()))
@@ -195,22 +209,16 @@ public class CCNFileProxy implements CCNFilterListener {
 			(new Thread(ul)).start();
 			
 			return true;
-		}
+		}*/
 		
 		// If the request is for an unsegmented file, just upload it right now
-		if (SegmentationProfile.isUnsegmented(interest.name())) {
-			try {
-				return writeFile(interest);
-			} catch (IOException e) {
-				Log.warning("IOException writing file {0}: {1}: {2}", interest.name(), e.getClass().getName(), e.getMessage());
-				return false;
-			}
+		try {
+			return writeFile(interest);
+		} catch (IOException e) {
+			Log.warning("IOException writing file {0}: {1}: {2}", interest.name(), e.getClass().getName(), e.getMessage());
+			return false;
 		}
 		
-		System.out.println("I should not be here");
-		return false;
-		//Log.info("File proxy did something impossible, ignoring {0}.", interest.name());
-		//return false;
 	}
 	
 	protected File ccnNameToFilePath(ContentName name) {

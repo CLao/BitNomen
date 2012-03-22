@@ -31,7 +31,7 @@ public class DownloadManager implements Runnable {
 			printStatus(true);
 		
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				// Do nothing
 			}
@@ -59,10 +59,10 @@ public class DownloadManager implements Runnable {
 	// Starts to download a download, and returns a reference to it in case you want to wait on it.
 	// Parameters: The ccn prefix of a guaranteed location we can find a file, the path to the file, 
 	//	the filepath to save it in, and the number of segments in the file.
-	public synchronized Download initDownload(String prefix, String path, String outPath, int segments){
+	public synchronized Download initDownload(String prefix, String path, String outPath, int chunks){
 		// Start a thread for the file.
 		
-			Download newDownload = new Download(path, "/" + outPath, peerLgr.recentPeers, segments);
+			Download newDownload = new Download(path, "/" + outPath, peerLgr.recentPeers, chunks);
 			downloads.add(newDownload);
 			(new Thread(newDownload)).start();
 			return newDownload;

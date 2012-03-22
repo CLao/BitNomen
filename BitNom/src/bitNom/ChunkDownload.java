@@ -40,6 +40,7 @@ public class ChunkDownload implements Runnable {
 	FileChannel channel;
 	
 	ChunkDownload (String dpath, String output, List<String> recentPeers, int segments, Download parent){
+		done = false;
 		path = dpath;
 		nSeg = segments;
 		peers = recentPeers;

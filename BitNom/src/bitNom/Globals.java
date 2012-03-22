@@ -1,5 +1,5 @@
 package bitNom;
-//import org.ccnx.ccn.profiles.SegmentationProfile;
+import org.ccnx.ccn.profiles.SegmentationProfile;
 
 public class Globals {
 	// Set these booleans to true if you want to have
@@ -14,8 +14,8 @@ public class Globals {
 	
 	// Path variables
 	public static String ccnHome = "ccnx:/";	// Home directory on ccn
-	public static String ourHome = "/home/Christian/Desktop/";		// Home directory on disk
+	public static String ourHome = "/dev/null";		// Home directory on disk
 	
 	// Segmentation variables
-	public static final long segSize = 262144;//SegmentationProfile.DEFAULT_BLOCKSIZE;			// File segment size, in Bytes
+	public static final long segSize = 524288;//SegmentationProfile.DEFAULT_BLOCKSIZE;			// File segment size, in Bytes
 }

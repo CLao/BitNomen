@@ -1,13 +1,15 @@
 package bitNom;
 
 import org.ccnx.ccn.impl.support.Log;
-import org.ccnx.ccn.io.content.Collection;
 import org.ccnx.ccn.protocol.ContentName;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +34,8 @@ public class Download implements Runnable{
 	private ArrayBlockingQueue<Boolean> _waitToken;
 	private int _waiters;
 	
-	public float percentDone() { return _amountDone/_fileSize; }
+	public float percentDone() { return 100 * _amountDone/_fileSize; }
+	public boolean finished() { return _finished; }
 	
 	// The regular expression in which chunk numbers must appear in filename
 	//	Under this implementation, a file chunk is named, for example, file.txt.001.
@@ -70,6 +73,8 @@ public class Download implements Runnable{
 			copy = copy.replace(complement[i], "");
 		}
 		
+		copy = copy.substring(1, copy.length() - 1);
+		
 		retNum = Integer.parseInt(copy);
 		
 		return retNum;
@@ -87,6 +92,11 @@ public class Download implements Runnable{
 	public static final String getChunkName(ContentName n){
 		return getChunkName(n.toString());
 	}
+	
+	public static final File getChunkFilename(File f){
+		return new File(getChunkName(f.toString()));
+	}
+	
 	/*	===========================================================================================
 	 * 
 	 * 	The actual Download class methods
@@ -101,6 +111,9 @@ public class Download implements Runnable{
 		_nChunks = nChunks;
 		_activeChunks = new ArrayBlockingQueue<ChunkDownload>(maxActiveChunks);
 		
+		// Right now, this is just an estimate of the file size.
+		_fileSize = nChunks * chunkSize;
+		
 		// Helping variables to allow a thread to blocking wait on this download.
 		_waitToken = new ArrayBlockingQueue<Boolean>(1);
 		_waitToken.add(true);
@@ -109,25 +122,38 @@ public class Download implements Runnable{
 	
 	private void concatenateChunks(){
 		try {
-			RandomAccessFile output = new RandomAccessFile(_inName, "rwd");
+			RandomAccessFile output;
+			output = new RandomAccessFile(Globals.ourHome + _outName, "rwd");
 			FileChannel outputChannel = output.getChannel();
 			int i = 0;
+			
 			// Open every chunk file and transfer the data to the output file
+			//	For now, we leave the extra chunks on disk, but now is where
+			//	we would delete them.
 			try {
 				for (; i < _nChunks; i++) {
-					FileInputStream curChunk = new FileInputStream(_inName + "." + i +".");
+					byte [] buffer = new byte[Download.chunkSize];
+					ByteBuffer buf = ByteBuffer.wrap(buffer);
+					FileInputStream curChunk = new FileInputStream(Globals.ourHome + _outName + "." + i +".");
 					FileChannel inputChannel = curChunk.getChannel();
-					outputChannel.transferFrom(inputChannel, outputChannel.position(), chunkSize);
+					
+					int w, l;
+					l = inputChannel.read(buf);
+					buf.position(0);
+					w = outputChannel.write(buf);
+					outputChannel.truncate(_fileSize - (Download.chunkSize - l));
+					if (Globals.dbDL) Log.info("Chunk: Read " + l + " bytes, wrote "+ w + " bytes.");
+					
 				}
-				outputChannel.truncate(_fileSize);
+	
 			} catch (FileNotFoundException e) {
-				Log.warning("Missing chunk {0} of file {1}.", i, _inName);
+				Log.warning("Missing chunk {0} of file {1}.", i, e.getMessage());
 			} catch (IOException e) {
-				Log.warning("Error concatenating file {0}", _inName);
+				Log.warning("Error concatenating file {0}", _outName);
 			}
-		
-		} catch (FileNotFoundException e) {
-			Log.warning("Could not open file {0} for Reading or writing.", _inName);
+		}catch (IOException e) {
+			System.out.println("I don't get it" + e.getMessage());
+			//Log.warning("Missing chunk {0} of file {1}.", i, _outName);
 		}
 	}
 	
@@ -158,7 +184,9 @@ public class Download implements Runnable{
 		}
 	}
 	
-	public void printStatus(){}
+	public void printStatus(){
+		Log.info("Download: {0}\n\t {1}% complete!", _outName, percentDone());
+	}
 	
 	// Attempt to start a ChunkDownloader. If the number of active downloaders is met,
 	//	the ChunkDownloader will block.
@@ -171,17 +199,24 @@ public class Download implements Runnable{
 		chunkLoaders = Collections.synchronizedList(new ArrayList<ChunkDownload>());
 		
 		for (int i = 0; i < _nChunks; i++) {
+			String chunkExtension = "." + i + ".";
+			
 			// Number of segments in the current chunk
-			int nSegments = (int) ((i == _nChunks - 1) ? (_fileSize % chunkSize / Globals.segSize) : chunkSize / Globals.segSize);
-			ChunkDownload temp = new ChunkDownload(_inName, _outName, _peers, nSegments, this);
+			//int nSegments = (int) ((i == _nChunks - 1) ? (_fileSize % chunkSize / Globals.segSize) : chunkSize / Globals.segSize);
+			
+			int nSegments = 1;
+			ChunkDownload temp = new ChunkDownload(_inName + chunkExtension, _outName + chunkExtension, _peers, nSegments, this);
 			chunkLoaders.add(temp);
 			(new Thread(temp)).start();
 		}
+
 		
 		// Wait for all of them to finish.
 		for (int i = 0; i < _nChunks; i++) {
 			chunkLoaders.get(i).waitForMe();
+			_amountDone += chunkSize;
 		}
+
 		
 		// Piece all the chunks together
 		concatenateChunks();

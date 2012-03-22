@@ -15,6 +15,11 @@
  * Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+//TODO: Right now, this is a copy of the SegmentationProfile included in ccnx
+//	We want to override the one included with this one, in order to change
+//	the block size. May not be compatible with other ccnx programs afterward
+//	though.
+
 package org.ccnx.ccn.profiles;
 
 import java.io.IOException;

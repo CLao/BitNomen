@@ -38,7 +38,10 @@ public class BitNom {
 		
 		searcher = new Searcher();	
 		startBitNom();
+
 		
+	
+
 	}
 	
 	public static void test(){
@@ -50,7 +53,7 @@ public class BitNom {
 		}
 		
 		peerLgr.addPeertoList("/chris/", peerLgr.recentPeers);
-		downloadMgr.initDownload("/chris/", "file.txt", "what.txt", 2);
+		downloadMgr.initDownload("/chris/", "epic.jpg", "con.jpg", 1);
 	}
 	
 	public static void startBitNom(){

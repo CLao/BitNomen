@@ -42,6 +42,56 @@ public class Upload implements Runnable{
 		}
 	}
 	
+	// The stand-in version of writeFile. Does the same thing as the normal
+	//	FileProxy's writeFile.
+	
+	protected boolean writeFile(Interest outstandingInterest) throws IOException {
+			
+			File fileToWrite = proxy.ccnNameToFilePath(outstandingInterest.name());
+			if (Globals.dbFP)Log.info("CCNFileProxy: extracted request for file: " + fileToWrite.getAbsolutePath() + " exists? ", fileToWrite.exists());
+			if (!fileToWrite.exists()) {
+				Log.warning("File {0} does not exist. Ignoring request.", fileToWrite.getAbsoluteFile());
+				return false;
+			}
+			
+			FileInputStream fis = null;
+			try {
+				fis = new FileInputStream(fileToWrite);
+			} catch (FileNotFoundException fnf) {
+				Log.warning("Unexpected: file we expected to exist doesn't exist: {0}!", fileToWrite.getAbsolutePath());
+				return false;
+			}
+			
+			// Set the version of the CCN content to be the last modification time of the file.
+			CCNTime modificationTime = new CCNTime(fileToWrite.lastModified());
+			ContentName versionedName = 
+				VersioningProfile.addVersion(new ContentName(proxy._prefix, 
+							outstandingInterest.name().postfix(proxy._prefix).components()), modificationTime);
+	
+			// CCNFileOutputStream will use the version on a name you hand it (or if the name
+			// is unversioned, it will version it).
+			CCNFileOutputStream ccnout = new CCNFileOutputStream(versionedName, proxy._handle);
+			
+			// We have an interest already, register it so we can write immediately.
+			ccnout.addOutstandingInterest(outstandingInterest);
+			
+			byte [] buffer = new byte[CCNFileProxy.BUF_SIZE];
+			
+			int read = fis.read(buffer);
+			while (read >= 0) {
+				ccnout.write(buffer, 0, read);
+				read = fis.read(buffer);
+			} 
+			fis.close();
+			ccnout.close(); // will flush
+			
+			return true;
+		}
+
+	
+	// The version of writeFile we want to use, which assumes a segment = a chunk
+	//	Unusable as long as we can't send a single stream greater than 500KB
+	/*
 	protected boolean writeFile(Interest outstandingInterest) throws IOException {
 			
 		long segNum = 0; 
@@ -54,12 +104,6 @@ public class Upload implements Runnable{
 			if (!fileToWrite.exists()) {
 				Log.warning("File {0} does not exist. Ignoring request.", fileToWrite.getAbsoluteFile());
 				return false;
-			}
-			
-			if (segPos > fileToWrite.length())
-			{
-			//	Log.warning("Ignoring request for segment {0} of file {1}. File is {2} bytes long.", segNum, fileToWrite.getName(), fileToWrite.length());
-			//	return false;
 			}
 			
 			FileInputStream fis = null;
@@ -91,7 +135,7 @@ public class Upload implements Runnable{
 			
 			// Skip the amount of bytes until we get to the next segment
 			long skipped = fis.skip(segNum * Globals.segSize);
-			if (skipped != segNum * Globals.segSize){
+			if (skipped == segNum * Globals.segSize){
 				succeeded = true;
 				int read = fis.read(buffer);
 				int total = read;
@@ -109,4 +153,5 @@ public class Upload implements Runnable{
 
 			return succeeded;
 		}
+	 */
 }
