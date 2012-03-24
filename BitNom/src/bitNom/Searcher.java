@@ -71,7 +71,7 @@ public class Searcher{
 					int offset = entry.getPath().lastIndexOf("/") + 1;
 					if(entry.getPath().substring(offset).contains(query))
 					{
-						String relative =  root.toURI().relativize(entry.toURI()).getPath();
+						String relative =  entry.getPath();//root.toURI().relativize(entry.toURI()).getPath();
 						//String pathname = root + "/" + relative;
 						appendToFile(searchFile.getAbsolutePath(), relative);
 					}

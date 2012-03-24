@@ -26,7 +26,10 @@ public class BitNom {
 		}
 		
 		Globals.ourHome = args[0];
-	
+		if(args.length > 1)
+		{
+			Globals.ccnHome = args[1];
+		}
 		peerLgr = new PeerLogger();
 		(new Thread (peerLgr)).start();
 		
@@ -59,8 +62,9 @@ public class BitNom {
 		Boolean quit = false;
 		String input;
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-		
 		System.out.println("BitNomen v0.0.1\n COMMANDS:\n\tDOWNLOAD <ccn filepath>\n\tSEARCH <query>\n\tSTATUS\n\tQUIT");
+		
+		peerLgr.addPeertoList(Globals.ccnHome, peerLgr.recentPeers);
 		
 		while(!quit){
 			try {
@@ -78,14 +82,15 @@ public class BitNom {
 			else if(input.matches("SEARCH[\\s]+.*")) {
 				System.out.println("Searching for " + input.replaceFirst("SEARCH[\\s]+", ""));
 				// Loop through our list of peers 
-				// For each peer
-				
+		
 				for(String peer : peerLgr.recentPeers)
 				{
-					String query = ".search " + input.replaceFirst("SEARCH[\\s]+", "");
+					System.out.println("Looking at peer: " + peer);
+					String query = ".search-" + input.replaceFirst("SEARCH[\\s]+", "");
 					Console console = System.console();
 					Download q = downloadMgr.initDownload(peer, query, ".results", 1);
 					q.waitForMe();
+					console.readLine("We get here.");
 					try {
 							FileInputStream fstream = new FileInputStream(Globals.ourHome + "/.results");
 							DataInputStream instream = new DataInputStream(fstream);
