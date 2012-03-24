@@ -76,7 +76,7 @@ public class BitNom {
 			}
 			
 			else if(input.matches("SEARCH[\\s]+.*")) {
-				System.out.println("Searching for " + input.split("SEARCH[\\s]+.*")[0]);
+				System.out.println("Searching for " + input.replaceFirst("SEARCH[\\s]+", ""));
 				// Loop through our list of peers 
 				// For each peer
 				
