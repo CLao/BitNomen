@@ -166,11 +166,13 @@ public class CCNFileProxy implements CCNFilterListener {
 			System.out.println("Hi!");
 		}
 		
-		//Check name of file. If it is .search[search query] then generate search results
+		//Check name of file. If it is .search search query then generate search results
+		// .search is 7 characters. Our query starts at 9. 
 		if (containsSearch)
 		{
-			
-			//generate 
+			// Search local directory for query.
+			Searcher localSearch = new Searcher(interest.name().toString());
+			localSearch.searchDirectory(new File(Globals.ourHome));
 		}
 		
 		//If it is .bootstrap then generate peer list
