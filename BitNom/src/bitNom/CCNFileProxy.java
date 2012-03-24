@@ -174,7 +174,7 @@ public class CCNFileProxy implements CCNFilterListener {
 		{
 			// Search local directory for query.
 			Searcher localSearch = new Searcher(interest.name().toString());
-			System.out.println("Starting local search....");
+			System.out.println("Downloading..." + interest.name().toString());
 			localSearch.searchDirectory(new File(Globals.ourHome));
 			System.out.println("Finish search...");
 		}

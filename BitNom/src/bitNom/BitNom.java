@@ -102,7 +102,9 @@ public class BitNom {
 					System.out.println("Looking at peer: " + peer);
 					String query = ".search-" + input.replaceFirst("SEARCH[\\s]+", "");
 					Console console = System.console();
+					
 					Download q = downloadMgr.initDownload(peer, query, ".results", 1);
+					console.readLine();
 					q.waitForMe();
 					console.readLine("We get here.");
 					try {
