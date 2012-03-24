@@ -5,9 +5,11 @@ import org.ccnx.ccn.impl.support.Log;
 
 public class Server implements Runnable {
 	String args[];
+	private PeerLogger _prlgr;
 	
-	Server(String[] pargs){
+	Server(String[] pargs, PeerLogger prlgr){
 		args = pargs;
+		_prlgr = prlgr;
 	}
 	
 	public void run(){
@@ -21,7 +23,7 @@ public class Server implements Runnable {
 		System.out.println("It compiles!");
 		
 		try {
-			proxy = new CCNFileProxy(filePrefix, ccnURI);
+			proxy = new CCNFileProxy(filePrefix, ccnURI, _prlgr);
 			
 			// All we need to do now is wait until interrupted.
 			proxy.start();

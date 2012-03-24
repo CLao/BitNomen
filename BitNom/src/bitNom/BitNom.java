@@ -26,12 +26,12 @@ public class BitNom {
 		}
 		
 		Globals.ourHome = args[0];
-		
-		server = new Server(args); // directory on disk; ccn name
-		(new Thread(server)).start();
-		
+	
 		peerLgr = new PeerLogger();
 		(new Thread (peerLgr)).start();
+		
+		server = new Server(args, peerLgr); // directory on disk; ccn name
+		(new Thread(server)).start();
 		
 		downloadMgr = new DownloadManager(peerLgr); // peerlist;
 		(new Thread (downloadMgr)).start(); // initDownload takes in dest name space, query, what you want to save it (relative to home path), chunks 
