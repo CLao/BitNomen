@@ -104,7 +104,6 @@ public class BitNom {
 					Console console = System.console();
 					
 					Download q = downloadMgr.initDownload(peer, query, ".results", 1);
-					console.readLine();
 					q.waitForMe();
 					console.readLine("We get here.");
 					try {

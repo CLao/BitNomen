@@ -159,14 +159,8 @@ public class CCNFileProxy implements CCNFilterListener {
 		
 		String what = ".search";
 		
-		boolean containsSearch;
-		try {
-			containsSearch = interest.name().containsWhere(what) == 0;
-		} catch (URISyntaxException e) {
-			containsSearch = false;
-			// TODO Auto-generated catch block
-			System.out.println("Hi!");
-		}
+		boolean containsSearch = false;
+		containsSearch = interest.name().toString().contains(what);
 		
 		//Check name of file. If it is .search-"search query" then generate search results
 		// .search is 7 characters. Our query starts at 9. 
@@ -175,8 +169,8 @@ public class CCNFileProxy implements CCNFilterListener {
 			// Search local directory for query.
 			Searcher localSearch = new Searcher(interest.name().toString());
 			System.out.println("Downloading..." + interest.name().toString());
-			localSearch.searchDirectory(new File(Globals.ourHome));
-			System.out.println("Finish search...");
+			localSearch.searchDirectory(new File(interest.name().toString()));
+			System.out.println("Finish search. Stored in " + localSearch.returnFile);
 		}
 		
 		//If it is .bootstrap then generate peer list

@@ -41,8 +41,20 @@ public class Searcher{
 	{
 		super();
 		root = new File(Globals.ourHome);
-		query = returnFile.substring(9);
-		returnFile = rf;
+		int offset = rf.lastIndexOf('/') + 9;
+		String temp = rf.substring(offset);
+		offset = temp.lastIndexOf('.');
+		temp = temp.substring(0, offset);
+		offset = temp.lastIndexOf('.');
+		query = temp.substring(0, offset);
+		
+		offset = rf.lastIndexOf('/') + 1;
+		temp = rf.substring(offset);
+		offset = temp.lastIndexOf('.');
+		temp = temp.substring(0, offset);
+		offset = temp.lastIndexOf('.');
+		returnFile = temp.substring(0, offset);
+		//System.out.println("Download to " + returnFile);
 	}
 	
 	/* searchDirectory() searches recursively through a given directory (root).
@@ -52,7 +64,6 @@ public class Searcher{
 	{
 		File[] entries = root.listFiles();
 		File searchFile = new File(root.getAbsolutePath() + "/" + returnFile);
-		
 		// Delete the .search file, if one already exists.
 		if(searchFile.exists())
 		{
@@ -71,7 +82,8 @@ public class Searcher{
 					int offset = entry.getPath().lastIndexOf("/") + 1;
 					if(entry.getPath().substring(offset).contains(query))
 					{
-						String relative =  entry.getPath();//root.toURI().relativize(entry.toURI()).getPath();
+						String relative =  root.toURI().relativize(entry.toURI()).getPath();
+						System.out.println("Apending to " + searchFile.getAbsolutePath());
 						//String pathname = root + "/" + relative;
 						appendToFile(searchFile.getAbsolutePath(), relative);
 					}
