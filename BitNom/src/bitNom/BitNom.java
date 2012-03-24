@@ -66,12 +66,17 @@ public class BitNom {
 				input = "";
 			}
 			
-			if(input.matches("DOWNLOAD[\\s]+.*")) {
+			if(input.matches("DOWNLOAD[\\s]+ccnx:/.+")) {
 				System.out.println("Downloading " + input.split("DOWNLOAD[\\s]+.*")[0]);
+				String file = input.replaceFirst("DOWNLOAD[\\s]+", "");
+				String filename = file.replaceFirst("ccnx:/.+/", "");
+				String prefix = file.split(filename)[0];
+				downloadMgr.initDownload(prefix, filename, filename, 1);
 			}
 			
-			else if(input.matches("SEARCH[\\s]+.*")) {
+			else if(input.matches("SEARCH[\\s]+.+")) {
 				System.out.println("Searching for " + input.split("SEARCH[\\s]+.*")[0]);
+				//Call search function
 			}
 			
 			else if(input.matches("STATUS")) {
