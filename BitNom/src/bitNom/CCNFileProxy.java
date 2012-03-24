@@ -90,6 +90,7 @@ public class CCNFileProxy implements CCNFilterListener {
 	public CCNHandle _handle;
 	public static final int maxUploads = 100;
 	public ArrayBlockingQueue<Upload> _uploads;
+	public PeerLogger _prlgr;
 	
 	//Keep track of how many uploading threads we have at once.
 	public long uploadThreads;
@@ -100,10 +101,11 @@ public class CCNFileProxy implements CCNFilterListener {
 		System.err.println("usage: CCNFileProxy <file path to serve> [<ccn prefix URI> default: ccn:/]");
 	}
 
-	public CCNFileProxy(String filePrefix, String ccnxURI) throws MalformedContentNameStringException, ConfigurationException, IOException {
+	public CCNFileProxy(String filePrefix, String ccnxURI, PeerLogger prlgr) throws MalformedContentNameStringException, ConfigurationException, IOException {
 		_prefix = ContentName.fromURI(ccnxURI);
 		_filePrefix = filePrefix;
 		_rootDirectory = new File(filePrefix);
+		_prlgr = prlgr;
 		if (!_rootDirectory.exists()) {
 			Log.severe("Cannot serve files from directory {0}: directory does not exist!", filePrefix);
 			throw new IOException("Cannot serve files from directory " + filePrefix + ": directory does not exist!");
@@ -179,14 +181,19 @@ public class CCNFileProxy implements CCNFilterListener {
 		what = ".bootstrap";
 		if (containsSearch)
 		{
+			//copy most recent peers list into a file called .bootstrap
+			File fBootStrap = new File(".bootstrap");
+			_prlgr.updateFile(_prlgr.recentPeers, fBootStrap);
 			
 		}
 		
-		//If .addPeer[peer name] then add peer
+		//If .addPeer peer name then add peer
 		what = ".addPeer";
 		if (containsSearch)
 		{
-			
+			// add peer onto most recent peer list file
+			_prlgr.addPeertoList(interest.name().toString().replaceFirst(".addPeer[\\s]", ""), _prlgr.recentPeers);
+			_prlgr.updateFile(_prlgr.recentPeers, _prlgr.fRecentPeers);
 		}
 		
 		// If the request is for a file chunk, generate the chunk.
