@@ -72,10 +72,22 @@ public class BitNom {
 			}
 			
 			if(input.matches("DOWNLOAD[\\s]+.*")) {
+				// Ask for the number of chunks. Ideally we want this to be automatically
+				//	known from the search.
+				System.out.print("Number of chunks in file? ");
+				String chunks = "0";
+				try {
+					chunks = in.readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				int n = Integer.parseInt(chunks);
+				
 				String file = input.replaceFirst("DOWNLOAD[\\s]+", "");
 				String filename = file.replaceFirst("ccnx:/.+/", "");
 				String prefix = file.split(filename)[0];
-				downloadMgr.initDownload(prefix, filename, filename, 1);
+				downloadMgr.initDownload(prefix, filename, filename, n);
 				System.out.println("Downloading " + prefix + " " + filename);
 			}
 			
