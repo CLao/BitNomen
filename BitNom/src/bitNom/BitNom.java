@@ -72,7 +72,11 @@ public class BitNom {
 			}
 			
 			if(input.matches("DOWNLOAD[\\s]+.*")) {
-				System.out.println("Downloading " + input.split("DOWNLOAD[\\s]+.*")[0]);
+				String file = input.replaceFirst("DOWNLOAD[\\s]+", "");
+				String filename = file.replaceFirst("ccnx:/.+/", "");
+				String prefix = file.split(filename)[0];
+				downloadMgr.initDownload(prefix, filename, filename, 1);
+				System.out.println("Downloading " + prefix + " " + filename);
 			}
 			
 			else if(input.matches("SEARCH[\\s]+.*")) {
