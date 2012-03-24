@@ -1,6 +1,10 @@
 package bitNom;
 
 import java.io.BufferedReader;
+import java.io.Console;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -23,18 +27,19 @@ public class BitNom {
 		
 		Globals.ourHome = args[0];
 		
-		server = new Server(args);
+		server = new Server(args); // directory on disk; ccn name
 		(new Thread(server)).start();
 		
 		peerLgr = new PeerLogger();
 		(new Thread (peerLgr)).start();
 		
-		downloadMgr = new DownloadManager(peerLgr);
-		(new Thread (downloadMgr)).start();
+		downloadMgr = new DownloadManager(peerLgr); // peerlist;
+		(new Thread (downloadMgr)).start(); // initDownload takes in dest name space, query, what you want to save it (relative to home path), chunks 
 		
-		searcher = new Searcher();	
+		//searcher = new Searcher();	
 		startBitNom();
-
+		// how do I make a call to download something?
+		// 
 	}
 	
 	public static void test(){
@@ -66,17 +71,56 @@ public class BitNom {
 				input = "";
 			}
 			
-			if(input.matches("DOWNLOAD[\\s]+ccnx:/.+")) {
+			if(input.matches("DOWNLOAD[\\s]+.*")) {
 				System.out.println("Downloading " + input.split("DOWNLOAD[\\s]+.*")[0]);
-				String file = input.replaceFirst("DOWNLOAD[\\s]+", "");
-				String filename = file.replaceFirst("ccnx:/.+/", "");
-				String prefix = file.split(filename)[0];
-				downloadMgr.initDownload(prefix, filename, filename, 1);
 			}
 			
-			else if(input.matches("SEARCH[\\s]+.+")) {
+			else if(input.matches("SEARCH[\\s]+.*")) {
 				System.out.println("Searching for " + input.split("SEARCH[\\s]+.*")[0]);
-				//Call search function
+				// Loop through our list of peers 
+				// For each peer
+				
+				for(String peer : peerLgr.recentPeers)
+				{
+					String query = ".search " + input.replaceFirst("SEARCH[\\s]+", "");
+					Console console = System.console();
+					Download q = downloadMgr.initDownload(peer, query, ".results", 1);
+					q.waitForMe();
+					try {
+							FileInputStream fstream = new FileInputStream(Globals.ourHome + "/.results");
+							DataInputStream instream = new DataInputStream(fstream);
+							BufferedReader br = new BufferedReader(new InputStreamReader(instream));
+							String strLine;
+							
+							try {
+									while((strLine = br.readLine()) != null)
+									{
+										System.out.println(strLine);
+										System.out.println("To download, type 'y' and press enter. Otherwise, press enter to continue...");
+										String reply = console.readLine();
+										if(reply == "y")
+										{
+											Download d = downloadMgr.initDownload(peer, strLine, "download", 1);
+											d.waitForMe();
+											break; // Exit search
+										}
+									}
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							try {
+								instream.close();
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						}
+					
+				}
 			}
 			
 			else if(input.matches("STATUS")) {

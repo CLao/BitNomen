@@ -34,21 +34,24 @@ import java.lang.String;
 
 public class Searcher{
 	File root;
+	String query;
+	String returnFile;
 	
-	public Searcher()
+	public Searcher(String rf)
 	{
 		super();
 		root = new File(Globals.ourHome);
-		//searchDirectory(root);
+		query = returnFile.substring(9);
+		returnFile = rf;
 	}
 	
 	/* searchDirectory() searches recursively through a given directory (root).
-	 * It records all filenames a local file, called .search.
+	 * It records all filenames a local file, called ".search query."
 	 */
-	private void searchDirectory(File root)
+	public void searchDirectory(File root)
 	{
 		File[] entries = root.listFiles();
-		File searchFile = new File(root.getAbsolutePath() + "/.search");
+		File searchFile = new File(root.getAbsolutePath() + "/" + returnFile);
 		
 		// Delete the .search file, if one already exists.
 		if(searchFile.exists())
@@ -65,9 +68,13 @@ public class Searcher{
 				}
 				else if(entry.isFile())
 				{
-					String relative =  root.toURI().relativize(entry.toURI()).getPath();
-					String pathname = root + "/" + relative;
-					appendToFile(root.getAbsolutePath() + "/.search", pathname);
+					int offset = entry.getPath().lastIndexOf("/") + 1;
+					if(entry.getPath().substring(offset).contains(query))
+					{
+						String relative =  root.toURI().relativize(entry.toURI()).getPath();
+						//String pathname = root + "/" + relative;
+						appendToFile(searchFile.getAbsolutePath(), relative);
+					}
 				}				
 			}
 		}
